@@ -1,0 +1,12 @@
+id,scheme_id,parent_id,code,name,time_start,time_end,sort_order
+1,1,,nishanta,Niśānta-līlā,03:36,06:00,1
+2,1,,pratah,Prātaḥ-līlā,06:00,08:24,2
+3,1,,purvahna,Pūrvāhna-līlā,08:24,10:48,3
+4,1,,madhyahna,Madhyāhna-līlā,10:48,15:36,4
+5,1,,aparahna,Aparāhna-līlā,15:36,18:00,5
+6,1,,sayahna,Sāyāhna-līlā,18:00,20:24,6
+7,1,,pradosha,Pradośa-līlā,20:24,22:48,7
+8,1,,nisha,Niśā-līlā,22:48,03:36,8
+9,2,1,nishanta-1,Niśānta (3:36–4:24),03:36,04:24,1
+10,2,1,nishanta-2,Niśānta (4:24–5:36),04:24,05:36,2
+11,2,1,nishanta-3,Niśānta (5:36–6:00),05:36,06:00,3
