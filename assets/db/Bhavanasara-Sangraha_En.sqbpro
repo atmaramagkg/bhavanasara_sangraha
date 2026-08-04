@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="Bhavanasara-Sangraha_En.sqlite" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="1"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="1787"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><table title="verses" custom_title="0" dock_id="1" table="4,6:mainverses"/><dock_state state="000000ff00000000fd0000000100000002000005bb00000390fc0100000001fb000000160064006f0063006b00420072006f00770073006500310100000000000005bb0000011e00ffffff000002690000000000000004000000040000000800000008fc00000000"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="app_settings" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="183"/><column index="2" value="86"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="books" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="35"/><column index="2" value="183"/><column index="3" value="271"/><column index="4" value="279"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="languages" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="35"/><column index="2" value="35"/><column index="3" value="63"/><column index="4" value="64"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="period_nodes" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="35"/><column index="2" value="65"/><column index="3" value="87"/><column index="4" value="77"/><column index="5" value="69"/><column index="6" value="62"/><column index="7" value="69"/><column index="8" value="223"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="sections" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="35"/><column index="2" value="98"/><column index="3" value="69"/><column index="4" value="215"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="translations" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="79"/><column index="2" value="279"/><column index="3" value="287"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="verses" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="35"/><column index="2" value="68"/><column index="3" value="69"/><column index="4" value="60"/><column index="6" value="69"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="SQL 1*">-- ==========================================
+-- 1. CREATE CONTENT TABLES
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS books (
+    id INTEGER PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    title_key TEXT NOT NULL,
+    author_key TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS period_nodes (
+    id INTEGER PRIMARY KEY,
+    parent_id INTEGER REFERENCES period_nodes(id),
+    code TEXT NOT NULL UNIQUE,
+    period_type TEXT NOT NULL DEFAULT 'main', -- 'main' or 'sub'
+    time_start TEXT,
+    time_end TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    name_key TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sections (
+    id INTEGER PRIMARY KEY,
+    period_node_id INTEGER NOT NULL REFERENCES period_nodes(id),
+    sort_order INTEGER NOT NULL,
+    title_key TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS verses (
+    id INTEGER PRIMARY KEY,
+    section_id INTEGER NOT NULL REFERENCES sections(id),
+    sort_order INTEGER NOT NULL,
+    text_key TEXT NOT NULL,
+    source_book_id INTEGER REFERENCES books(id),
+    source_ref TEXT -- e.g., '1.10' or 'Govinda-līlāmṛta 1.10'
+);
+
+-- ==========================================
+-- 2. SEED SOURCE BOOKS (Translations &amp; Data)
+-- ==========================================
+
+-- Insert English translations for Book Titles and Authors
+INSERT OR IGNORE INTO translations (language_id, translation_key, translated_text) VALUES
+(1, 'book.bhagavatam.title', 'Śrīmad Bhāgavatam'),
+(1, 'book.bhagavatam.author', 'Veda Vyāsa'),
+(1, 'book.gopala-campu.title', 'Gopāla-campū'),
+(1, 'book.gopala-campu.author', 'Śrīla Jīva Gosvāmī'),
+(1, 'book.bhakti-rasamrta-sindhu.title', 'Bhakti-rasāmṛta-sindhu'),
+(1, 'book.bhakti-rasamrta-sindhu.author', 'Śrīla Rūpa Gosvāmī'),
+(1, 'book.ujjvala-nilamani.title', 'Ujjvala-nīlamaṇi'),
+(1, 'book.ujjvala-nilamani.author', 'Śrīla Rūpa Gosvāmī'),
+(1, 'book.caitanya-caritamrta.title', 'Caitanya-caritāmṛta'),
+(1, 'book.caitanya-caritamrta.author', 'Śrīla Kṛṣṇadāsa Kavirāja Gosvāmī'),
+(1, 'book.brhad-bhagavatamrta.title', 'Bṛhad-bhāgavatāmṛta'),
+(1, 'book.brhad-bhagavatamrta.author', 'Śrīla Sanātana Gosvāmī'),
+(1, 'book.ananda-vrndavana-campu.title', 'Ānanda-vṛndāvana-campū'),
+(1, 'book.ananda-vrndavana-campu.author', 'Śrīla Kavi Karṇapūra'),
+(1, 'book.radha-rasa-sudha-nidhi.title', 'Rādhā-rasa-sudhā-nidhi'),
+(1, 'book.radha-rasa-sudha-nidhi.author', 'Śrīla Prabodhānanda Sarasvatī'),
+(1, 'book.vidagdha-madhava.title', 'Vidagdha-mādhava'),
+(1, 'book.vidagdha-madhava.author', 'Śrīla Rūpa Gosvāmī'),
+(1, 'book.lalita-madhava.title', 'Lalitā-mādhava'),
+(1, 'book.lalita-madhava.author', 'Śrīla Rūpa Gosvāmī'),
+(1, 'book.govinda-lilamrta.title', 'Govinda-līlāmṛta'),
+(1, 'book.govinda-lilamrta.author', 'Śrīla Viśvanātha Cakravartī Ṭhākura'),
+(1, 'book.krsna-bhavanamrta.title', 'Kṛṣṇa-bhāvanāmṛta'),
+(1, 'book.krsna-bhavanamrta.author', 'Śrīla Viśvanātha Cakravartī Ṭhākura'),
+(1, 'book.krsnahnika-kaumudi.title', 'Kṛṣṇāhnika-kaumudī'),
+(1, 'book.krsnahnika-kaumudi.author', 'Śrīla Kavi Karṇapūra'),
+(1, 'book.gita-govinda.title', 'Gīta-govinda'),
+(1, 'book.gita-govinda.author', 'Śrīla Jayadeva Gosvāmī'),
+(1, 'book.alankara-kaustubha.title', 'Alaṅkāra-kaustubha'),
+(1, 'book.alankara-kaustubha.author', 'Śrīla Kavi Karṇapūra'),
+(1, 'book.padyavali.title', 'Padyāvalī'),
+(1, 'book.padyavali.author', 'Śrīla Rūpa Gosvāmī');
+
+-- Insert the Books into the books table
+INSERT OR IGNORE INTO books (id, slug, title_key, author_key) VALUES
+(1, 'bhagavatam', 'book.bhagavatam.title', 'book.bhagavatam.author'),
+(2, 'gopala-campu', 'book.gopala-campu.title', 'book.gopala-campu.author'),
+(3, 'bhakti-rasamrta-sindhu', 'book.bhakti-rasamrta-sindhu.title', 'book.bhakti-rasamrta-sindhu.author'),
+(4, 'ujjvala-nilamani', 'book.ujjvala-nilamani.title', 'book.ujjvala-nilamani.author'),
+(5, 'caitanya-caritamrta', 'book.caitanya-caritamrta.title', 'book.caitanya-caritamrta.author'),
+(6, 'brhad-bhagavatamrta', 'book.brhad-bhagavatamrta.title', 'book.brhad-bhagavatamrta.author'),
+(7, 'ananda-vrndavana-campu', 'book.ananda-vrndavana-campu.title', 'book.ananda-vrndavana-campu.author'),
+(8, 'radha-rasa-sudha-nidhi', 'book.radha-rasa-sudha-nidhi.title', 'book.radha-rasa-sudha-nidhi.author'),
+(9, 'vidagdha-madhava', 'book.vidagdha-madhava.title', 'book.vidagdha-madhava.author'),
+(10, 'lalita-madhava', 'book.lalita-madhava.title', 'book.lalita-madhava.author'),
+(11, 'govinda-lilamrta', 'book.govinda-lilamrta.title', 'book.govinda-lilamrta.author'),
+(12, 'krsna-bhavanamrta', 'book.krsna-bhavanamrta.title', 'book.krsna-bhavanamrta.author'),
+(13, 'krsnahnika-kaumudi', 'book.krsnahnika-kaumudi.title', 'book.krsnahnika-kaumudi.author'),
+(14, 'gita-govinda', 'book.gita-govinda.title', 'book.gita-govinda.author'),
+(15, 'alankara-kaustubha', 'book.alankara-kaustubha.title', 'book.alankara-kaustubha.author'),
+(16, 'padyavali', 'book.padyavali.title', 'book.padyavali.author');
+
+-- ==========================================
+-- 3. SEED PERIOD NODES (Main &amp; Subperiods)
+-- ==========================================
+
+-- Insert English translations for Chapter 1 Subperiods
+INSERT OR IGNORE INTO translations (language_id, translation_key, translated_text) VALUES
+(1, 'period_node.nishanta_1.name', 'Niśānta-līlā (3:36 a.m.—4:24 a.m.)'),
+(1, 'period_node.nishanta_2.name', 'Niśānta-līlā (4:24 a.m.—5:36 a.m.)'),
+(1, 'period_node.nishanta_3.name', 'Niśānta-līlā (5:36 a.m.—6:00 a.m.)');
+
+-- Insert the 8 Main Periods (Linking to the translations we created in Step 1)
+INSERT OR IGNORE INTO period_nodes (id, parent_id, code, period_type, time_start, time_end, sort_order, name_key) VALUES
+(1, NULL, 'nishanta', 'main', '03:36', '06:00', 1, 'period.nishanta.name'),
+(2, NULL, 'pratah', 'main', '06:00', '08:24', 2, 'period.pratah.name'),
+(3, NULL, 'purvahna', 'main', '08:24', '10:48', 3, 'period.purvahna.name'),
+(4, NULL, 'madhyahna', 'main', '10:48', '15:36', 4, 'period.madhyahna.name'),
+(5, NULL, 'aparahna', 'main', '15:36', '18:00', 5, 'period.aparahna.name'),
+(6, NULL, 'sayahna', 'main', '18:00', '20:24', 6, 'period.sayahna.name'),
+(7, NULL, 'pradosha', 'main', '20:24', '22:48', 7, 'period.pradosha.name'),
+(8, NULL, 'nisha', 'main', '22:48', '03:36', 8, 'period.nisha.name');
+
+-- Insert Chapter 1 Subperiods (parent_id = 1, which is Niśānta-līlā)
+INSERT OR IGNORE INTO period_nodes (id, parent_id, code, period_type, time_start, time_end, sort_order, name_key) VALUES
+(9, 1, 'nishanta_1', 'sub', '03:36', '04:24', 1, 'period_node.nishanta_1.name'),
+(10, 1, 'nishanta_2', 'sub', '04:24', '05:36', 2, 'period_node.nishanta_2.name'),
+(11, 1, 'nishanta_3', 'sub', '05:36', '06:00', 3, 'period_node.nishanta_3.name');
+
+-- ==========================================
+-- 4. SEED SECTIONS (Topics inside Subperiods)
+-- ==========================================
+
+-- Insert English translations for Chapter 1 Sections
+INSERT OR IGNORE INTO translations (language_id, translation_key, translated_text) VALUES
+(1, 'section.nishanta_1.1.title', 'The sakhīs’ morning services'),
+(1, 'section.nishanta_1.2.title', 'The birds awaken Rādhā and Kṛṣṇa'),
+(1, 'section.nishanta_1.3.title', 'The pleasure fatigue'),
+(1, 'section.nishanta_1.4.title', 'Rādhā-Kṛṣṇa’s sweet fatigue');
+
+-- Insert the Sections into the sections table (Linked to subperiod ID 9)
+INSERT OR IGNORE INTO sections (id, period_node_id, sort_order, title_key) VALUES
+(1, 9, 1, 'section.nishanta_1.1.title'),
+(2, 9, 2, 'section.nishanta_1.2.title'),
+(3, 9, 3, 'section.nishanta_1.3.title'),
+(4, 9, 4, 'section.nishanta_1.4.title');</sql><current_tab id="0"/></tab_sql></sqlb_project>
