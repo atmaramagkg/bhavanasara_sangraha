@@ -16,13 +16,22 @@ class _VerseReaderScreenState extends State<VerseReaderScreen> {
 
   Future<Map<String, dynamic>> _loadData(int id) async {
     final db = await AppDatabase.instance.database;
+    final int langId = await AppDatabase.instance.getCurrentLanguageId();
 
     final rows = await db.rawQuery('''
-      SELECT v.*, b.title AS book_title
+      SELECT v.*,
+        COALESCE(
+          (SELECT translated_text FROM translations
+            WHERE translation_key = b.title_key AND language_id = ?),
+          (SELECT translated_text FROM translations
+            WHERE translation_key = b.title_key
+              AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          b.slug
+        ) AS book_title
       FROM verses v
       JOIN books b ON b.id = v.book_id
       WHERE v.id = ?
-    ''', [id]);
+    ''', [langId, id]);
 
     if (rows.isEmpty) return {'verse': null};
 

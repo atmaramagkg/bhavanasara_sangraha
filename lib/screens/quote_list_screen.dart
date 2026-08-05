@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../core/database/app_database.dart';
+import 'verse_reader_screen.dart';
 
-/// Level 4 screen: shows the quotes of one section,
-/// each with its source citation(s).
 class QuoteListScreen extends StatelessWidget {
   final Map<String, dynamic> section;
 
   const QuoteListScreen({super.key, required this.section});
 
   // ------------------------------------------------------------------
-  // Database queries (self-contained)
+  // Database queries
   // ------------------------------------------------------------------
 
   Future<List<Map<String, dynamic>>> _loadQuotes() async {
@@ -29,11 +28,11 @@ class QuoteListScreen extends StatelessWidget {
   Future<List<Map<String, dynamic>>> _loadCitations(int quoteId) async {
     final db = await AppDatabase.instance.database;
 
+    // NOTE: the books table has no `title` column (it uses title_key),
+    // so we only fetch what the chip needs here.
     final rows = await db.rawQuery('''
-      SELECT c.id, c.ref_display, c.source_verse_id,
-             b.title AS book_title
+      SELECT c.id, c.ref_display, c.source_verse_id
       FROM citations c
-      LEFT JOIN books b ON b.id = c.source_book_id
       WHERE c.quote_id = ?
       ORDER BY c.id ASC
     ''', [quoteId]);
@@ -142,15 +141,17 @@ class _QuoteCard extends StatelessWidget {
                           citation['ref_display'] as String? ?? '',
                         ),
                         onPressed: () {
-                          // Verse reader screen comes in the next step.
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${citation['book_title'] ?? ''} '
-                                '${citation['ref_display'] ?? ''}',
+                          final verseId = citation['source_verse_id'];
+                          if (verseId != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => VerseReaderScreen(
+                                  verseId: verseId as int,
+                                ),
                               ),
-                            ),
-                          );
+                            );
+                          }
                         },
                       ),
                   ],
