@@ -34,8 +34,6 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   assets:
-    - assets/csv/
-    - assets/raw/
-    - assets/seed/
+
     - assets/db/
     - assets/icon/
