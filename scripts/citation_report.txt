@@ -1,0 +1,45 @@
+sections created: 129
+quotes created:   799
+citations created:784
+
+=== suspicious_verse_numbers (10) ===
+quote_id=19 book=krsnahnika-kaumudi ref=1.10-1
+quote_id=94 book=govinda-lilamrta ref=2.8-1
+quote_id=143 book=krsna-bhavanamrta ref=4.109-10
+quote_id=178 book=govinda-lilamrta ref=3.84-12
+quote_id=325 book=stavavali ref=8-1
+quote_id=456 book=govinda-lilamrta ref=14.105-12
+quote_id=532 book=govinda-lilamrta ref=16.109-10
+quote_id=673 book=govinda-lilamrta ref=20.57-6
+quote_id=709 book=govinda-lilamrta ref=22.6-1
+quote_id=729 book=ananda-vrndavana-campu ref=20.95-12
+
+=== main_headings_matched_by_name_not_time (1) ===
+line 435: '+A: (6:00 a.m.—6:24 a.m.) Prātaḥ-līlā - Morning Pastimes'
+
+=== unparsed_citations (15) ===
+section_id=13 quote_id=71: '. Though still drowsy, Viśākhā got out of bed and said, “O sakhī Rādhā! Quickly rise, quickly rise!”'
+section_id=19 quote_id=110: 'ī’s description and forgot all about Her bath. Lavaṅga-mañjarī summoned Rādhā with an anxious heart.'
+section_id=22 quote_id=142: 'She could not feed Kṛṣṇa the items She had prepared for Him.'
+section_id=24 quote_id=156: 'de of Her topmost bliss (ānanda). Tuṅgavidyā glorified Śrī Kṛṣṇa’s divine abode to please Rādhārāṇī.'
+section_id=31 quote_id=183: 'ult in repeating the description of Kṛṣṇa’s transcendental breakfast and Madhumaṅgala’s funny jokes.'
+section_id=35 quote_id=198: 'on His arms. He donned a blue dhotī and held a horn and stick in His hands as He met His companions.'
+section_id=42 quote_id=231: 's vana- sakhī. Although momentarily stunned, Rādhā yearned to hear more about Kṛṣṇa and His friends.'
+section_id=52 quote_id=258: 'hen gazed with great longing at the pathway on which Tulasī-mañjarī would return with news of Kṛṣṇa.'
+section_id=53 quote_id=269: 'sakhīs drank that sweet nectar to their full satisfaction with the cups of their thirsty ears.'
+section_id=56 quote_id=284: ' a result, You are now happily touching the feet of Gokulacandra continually with Your entire body.”'
+section_id=60 quote_id=313: 'port. Although it was not caught in a creeper, Rādhā anxiously turned Her head to look at Her cloth.'
+section_id=70 quote_id=357: 'es for showing Them the matchless beauty of Vṛndāvana. Rādhā-Mādhava then happily praised Vṛndāvana.'
+section_id=74 quote_id=407: 'ates redressed Them with skillfully prepared flower belts, earrings, necklaces, crowns and armbands.'
+section_id=95 quote_id=642: 'dhura rasa. Kṛṣṇa’s ankle bells jingled loudly as He sauntered into Yāvaṭ with His intimate friends.'
+section_id=129 quote_id=799: 'Gāndharvikā-Giridhārī ki jai!'
+
+=== sub_headings_recovered_from_body_text (7) ===
+line 1331: 'Madhyāhna-līlā (11:12 a. m.—11:36 a. m.)'
+line 1928: 'Madhyāhna-līlā (2:24 p.m.—2:48 p.m.)'
+line 2006: 'Madhyāhna-līlā (2:48 p.m.—3:12 p.m.)'
+line 2048: 'Madhyāhna-līlā (3:12 p.m.—3:36 p.m.)'
+line 2329: 'Aparāhna-līlā (4:00 p.m.—4:24 p.m.)'
+line 2338: 'Aparāhna-līlā (4:24 p.m.—4:48 p.m.)'
+line 2352: 'Aparāhna-līlā (4:48 p.m.—6:00 p.m.)'
+

@@ -1,7 +1,7 @@
 name: bhavanasara_sangraha
 description: "Quotes form 30 scriptures related to Asta-kaliya Lila."
 publish_to: 'none' 
-version: 0.15.0+1
+version: 0.2.0+1
 
 environment:
   sdk: ^3.12.2
