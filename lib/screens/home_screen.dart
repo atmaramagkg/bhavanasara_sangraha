@@ -30,9 +30,24 @@ class HomeScreen extends StatelessWidget {
           );
         }
 
-        return ReadingScreen(
-          repository: BssRepository(db),
-          initialPeriodId: 1,
+        final repository = BssRepository(db);
+
+        // Open on whichever main period the clock says it is right now,
+        // falling back to period 1 if that lookup ever fails.
+        return FutureBuilder<int?>(
+          future: repository.getCurrentMainPeriodId(),
+          builder: (context, periodSnapshot) {
+            if (periodSnapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            return ReadingScreen(
+              repository: repository,
+              initialPeriodId: periodSnapshot.data ?? 1,
+            );
+          },
         );
       },
     );

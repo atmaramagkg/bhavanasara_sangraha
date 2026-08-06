@@ -168,7 +168,7 @@ class BssRepository {
       SELECT 
         q.id AS quote_id,
         COALESCE(q.quote_text, '') AS quote_text,
-        COALESCE(c.ref_display, 'General Reference') AS ref_display,
+        COALESCE(c.ref_display, '') AS ref_display,
         COALESCE(tb.translated_text, b.slug, '') AS book_title
       FROM quotes q
       LEFT JOIN citations c ON q.id = c.quote_id
@@ -227,5 +227,38 @@ class BssRepository {
     }
 
     return items;
+  }
+
+  /// The id of whichever main period the current device time falls in,
+  /// or null if the lookup fails for any reason (caller should fall back
+  /// to a sensible default, e.g. period 1).
+  Future<int?> getCurrentMainPeriodId({DateTime? now}) async {
+    const query = '''
+      SELECT id, time_start, time_end
+      FROM period_nodes
+      WHERE period_type = 'main'
+      ORDER BY sort_order ASC;
+    ''';
+
+    final List<Map<String, dynamic>> results = await db.rawQuery(query);
+    if (results.isEmpty) return null;
+
+    final DateTime t = now ?? DateTime.now();
+    final String nowHm =
+        '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+    for (final row in results) {
+      final String start = (row['time_start'] as String?) ?? '';
+      final String end = (row['time_end'] as String?) ?? '';
+      if (start.isEmpty || end.isEmpty) continue;
+
+      final bool within = start.compareTo(end) <= 0
+          ? nowHm.compareTo(start) >= 0 && nowHm.compareTo(end) < 0
+          // period wraps past midnight (e.g. Niśa: 22:48 -> 03:36)
+          : nowHm.compareTo(start) >= 0 || nowHm.compareTo(end) < 0;
+
+      if (within) return row['id'] as int?;
+    }
+    return results.first['id'] as int?;
   }
 }

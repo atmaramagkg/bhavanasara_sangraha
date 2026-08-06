@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../app_theme.dart';
 import '../models/lila_period.dart';
 import '../services/bss_repository.dart';
@@ -18,8 +19,12 @@ class ReadingScreen extends StatefulWidget {
 }
 
 class _ReadingScreenState extends State<ReadingScreen> {
-  final ScrollController _scrollController = ScrollController();
-  final Map<int, GlobalKey> _sectionKeys = {};
+  // ItemScrollController scrolls to an index directly -- it does not need
+  // the target item to already be built, so it works reliably no matter
+  // how far away the target is, unlike Scrollable.ensureVisible + GlobalKey.
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener =
+      ItemPositionsListener.create();
 
   List<LilaPeriod> _mainPeriods = [];
   List<SubPeriod> _currentSubPeriods = [];
@@ -35,14 +40,13 @@ class _ReadingScreenState extends State<ReadingScreen> {
   void initState() {
     super.initState();
     _selectedMainPeriodId = widget.initialPeriodId;
-    _scrollController.addListener(_onScroll);
+    _itemPositionsListener.itemPositions.addListener(_onPositionsChanged);
     _initializeData();
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
+    _itemPositionsListener.itemPositions.removeListener(_onPositionsChanged);
     super.dispose();
   }
 
@@ -50,73 +54,77 @@ class _ReadingScreenState extends State<ReadingScreen> {
     if (!mounted) return;
     setState(() => _isLoading = true);
 
-    final List<LilaPeriod> mainPeriods = await widget.repository.getMainPeriods();
-    final List<ContinuousReadingItem> feedItems = await widget.repository.loadFullContinuousFeed();
+    try {
+      final List<LilaPeriod> mainPeriods = await widget.repository.getMainPeriods();
+      final List<ContinuousReadingItem> feedItems = await widget.repository.loadFullContinuousFeed();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    _sectionKeys.clear();
-    for (final item in feedItems) {
-      _sectionKeys[item.section.id] = GlobalKey();
-    }
+      _mainPeriods = mainPeriods;
+      _feedItems = feedItems;
 
-    _mainPeriods = mainPeriods;
-    _feedItems = feedItems;
+      int initialIndex = 0;
+      if (feedItems.isNotEmpty) {
+        initialIndex = feedItems.indexWhere(
+          (item) => item.mainPeriod.id == _selectedMainPeriodId,
+        );
+        if (initialIndex == -1) initialIndex = 0;
 
-    if (feedItems.isNotEmpty) {
-      final targetItem = feedItems.firstWhere(
-        (item) => item.mainPeriod.id == _selectedMainPeriodId,
-        orElse: () => feedItems.first,
-      );
-
-      _selectedMainPeriodId = targetItem.mainPeriod.id;
-      _selectedSubPeriodId = targetItem.subPeriod.id;
-      _selectedSectionId = targetItem.section.id;
-    }
-
-    final subPeriods = await widget.repository.getSubPeriods(_selectedMainPeriodId);
-    if (!mounted) return;
-
-    setState(() {
-      _currentSubPeriods = subPeriods;
-      if (!subPeriods.any((s) => s.id == _selectedSubPeriodId) && subPeriods.isNotEmpty) {
-        _selectedSubPeriodId = subPeriods.first.id;
+        final targetItem = feedItems[initialIndex];
+        _selectedMainPeriodId = targetItem.mainPeriod.id;
+        _selectedSubPeriodId = targetItem.subPeriod.id;
+        _selectedSectionId = targetItem.section.id;
       }
-      _isLoading = false;
-    });
 
-    if (_selectedSectionId != -1) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToSection(_selectedSectionId, animate: false);
+      final subPeriods = await widget.repository.getSubPeriods(_selectedMainPeriodId);
+      if (!mounted) return;
+
+      setState(() {
+        _currentSubPeriods = subPeriods;
+        if (!subPeriods.any((s) => s.id == _selectedSubPeriodId) && subPeriods.isNotEmpty) {
+          _selectedSubPeriodId = subPeriods.first.id;
+        }
+        _isLoading = false;
       });
+
+      if (feedItems.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _itemScrollController.jumpTo(index: initialIndex);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error initializing data: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  void _onScroll() {
-    if (_isProgrammaticScroll || _feedItems.isEmpty || !_scrollController.hasClients) return;
+  /// Keeps the top tabs / subperiod bar / right rail in sync with whatever
+  /// section the user has scrolled to manually (not via a button tap).
+  void _onPositionsChanged() {
+    if (_isProgrammaticScroll || _feedItems.isEmpty) return;
 
-    for (final item in _feedItems) {
-      final key = _sectionKeys[item.section.id];
-      if (key?.currentContext != null) {
-        final renderBox = key!.currentContext!.findRenderObject() as RenderBox?;
-        if (renderBox != null) {
-          final position = renderBox.localToGlobal(Offset.zero);
-          if (position.dy >= -20 && position.dy <= 300) {
-            if (_selectedSectionId != item.section.id ||
-                _selectedSubPeriodId != item.subPeriod.id ||
-                _selectedMainPeriodId != item.mainPeriod.id) {
-              _updateActiveNavigationSilently(item.mainPeriod.id, item.subPeriod.id, item.section.id);
-            }
-            break;
-          }
-        }
-      }
-    }
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
+
+    // The topmost item that's still at least partially visible.
+    final ItemPosition topMost = positions
+        .where((p) => p.itemTrailingEdge > 0)
+        .reduce((a, b) => a.itemLeadingEdge < b.itemLeadingEdge ? a : b);
+
+    if (topMost.index < 0 || topMost.index >= _feedItems.length) return;
+
+    final item = _feedItems[topMost.index];
+    if (item.section.id == _selectedSectionId) return;
+
+    _updateActiveNavigationSilently(item.mainPeriod.id, item.subPeriod.id, item.section.id);
   }
 
   Future<void> _updateActiveNavigationSilently(int mainId, int subId, int secId) async {
     List<SubPeriod> subPeriods = _currentSubPeriods;
-    if (mainId != _selectedMainPeriodId) {
+    final bool mainChanged = mainId != _selectedMainPeriodId;
+    if (mainChanged) {
       subPeriods = await widget.repository.getSubPeriods(mainId);
     }
     if (!mounted) return;
@@ -125,73 +133,53 @@ class _ReadingScreenState extends State<ReadingScreen> {
       _selectedMainPeriodId = mainId;
       _selectedSubPeriodId = subId;
       _selectedSectionId = secId;
-      if (mainId != _selectedMainPeriodId) {
+      if (mainChanged) {
         _currentSubPeriods = subPeriods;
       }
     });
   }
 
-  void _scrollToSection(int sectionId, {bool animate = true}) {
-    final key = _sectionKeys[sectionId];
+  /// Scrolls the feed so the given section's title lands near the top.
+  /// Index-based, so it works whether or not the item has ever been built.
+  Future<void> _scrollToSection(int sectionId, {bool animate = true}) async {
+    final index = _feedItems.indexWhere((item) => item.section.id == sectionId);
+    if (index == -1) {
+      debugPrint('Section $sectionId not found in feed');
+      return;
+    }
+
     _isProgrammaticScroll = true;
 
-    final targetItem = _feedItems.firstWhere(
-      (item) => item.section.id == sectionId,
-      orElse: () => _feedItems.first,
-    );
-
-    setState(() {
-      _selectedSectionId = sectionId;
-      _selectedMainPeriodId = targetItem.mainPeriod.id;
-      _selectedSubPeriodId = targetItem.subPeriod.id;
-    });
-
-    if (key != null && key.currentContext != null) {
-      Scrollable.ensureVisible(
-        key.currentContext!,
-        duration: Duration(milliseconds: animate ? 350 : 0),
+    if (animate) {
+      await _itemScrollController.scrollTo(
+        index: index,
+        duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
-        alignment: 0.0,
-      ).then((_) {
-        Future.delayed(const Duration(milliseconds: 200), () {
-          _isProgrammaticScroll = false;
-        });
-      });
+        alignment: 0.02,
+      );
     } else {
-      final index = _feedItems.indexWhere((item) => item.section.id == sectionId);
-      if (index != -1 && _scrollController.hasClients) {
-        final estimatedOffset = index * 180.0;
-        _scrollController.animateTo(
-          estimatedOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
-          duration: Duration(milliseconds: animate ? 350 : 0),
-          curve: Curves.easeInOut,
-        ).then((_) {
-          Future.delayed(const Duration(milliseconds: 200), () {
-            _isProgrammaticScroll = false;
-          });
-        });
-      } else {
-        _isProgrammaticScroll = false;
-      }
+      _itemScrollController.jumpTo(index: index, alignment: 0.02);
     }
+
+    // Small settle delay so the position listener doesn't immediately
+    // fight the button-driven selection with its own read of the scroll.
+    await Future.delayed(const Duration(milliseconds: 150));
+    _isProgrammaticScroll = false;
   }
 
   Future<void> _onMainPeriodTabSelected(int mainPeriodId) async {
     final subPeriods = await widget.repository.getSubPeriods(mainPeriodId);
-    
-    final targetItem = _feedItems.firstWhere(
-      (item) => item.mainPeriod.id == mainPeriodId,
-      orElse: () => _feedItems.first,
-    );
+
+    final targetIndex = _feedItems.indexWhere((item) => item.mainPeriod.id == mainPeriodId);
+    if (targetIndex == -1) return;
+    final targetItem = _feedItems[targetIndex];
 
     if (!mounted) return;
 
     setState(() {
       _selectedMainPeriodId = mainPeriodId;
       _currentSubPeriods = subPeriods;
-      if (subPeriods.isNotEmpty) {
-        _selectedSubPeriodId = subPeriods.first.id;
-      }
+      _selectedSubPeriodId = targetItem.subPeriod.id;
       _selectedSectionId = targetItem.section.id;
     });
 
@@ -199,10 +187,9 @@ class _ReadingScreenState extends State<ReadingScreen> {
   }
 
   Future<void> _onSubPeriodSelected(int subPeriodId) async {
-    final targetItem = _feedItems.firstWhere(
-      (item) => item.subPeriod.id == subPeriodId,
-      orElse: () => _feedItems.first,
-    );
+    final targetIndex = _feedItems.indexWhere((item) => item.subPeriod.id == subPeriodId);
+    if (targetIndex == -1) return;
+    final targetItem = _feedItems[targetIndex];
 
     if (!mounted) return;
 
@@ -215,12 +202,18 @@ class _ReadingScreenState extends State<ReadingScreen> {
     _scrollToSection(targetItem.section.id);
   }
 
+  void _onSectionRailSelected(int sectionId) {
+    setState(() => _selectedSectionId = sectionId);
+    _scrollToSection(sectionId);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final goldColor = isDark ? BssColors.darkOakGold : BssColors.goldAccent;
     final cardBg = isDark ? BssColors.darkOakCard : BssColors.parchmentCard;
     final textColor = isDark ? BssColors.darkOakText : BssColors.darkText;
+    final subTextCol = isDark ? BssColors.darkOakSubText : BssColors.subText;
 
     if (_isLoading) {
       return const Scaffold(
@@ -235,11 +228,61 @@ class _ReadingScreenState extends State<ReadingScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text(
-          'Bhāvanāsāra Saṅgraha',
-          style: TextStyle(fontFamily: 'Serif', fontSize: 16),
+        leadingWidth: 84,
+        leading: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.access_time),
+              tooltip: 'Current time (coming soon)',
+              onPressed: null,
+              color: goldColor,
+              disabledColor: goldColor.withAlpha(140),
+              iconSize: 20,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              visualDensity: VisualDensity.compact,
+            ),
+            IconButton(
+              icon: const Icon(Icons.menu_book_outlined),
+              tooltip: 'Cited scriptures (coming soon)',
+              onPressed: null,
+              color: goldColor,
+              disabledColor: goldColor.withAlpha(140),
+              iconSize: 20,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
         ),
-        centerTitle: true,
+        title: null,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Search (coming soon)',
+            onPressed: null,
+            color: goldColor,
+            disabledColor: goldColor.withAlpha(140),
+            iconSize: 20,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+            visualDensity: VisualDensity.compact,
+          ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.menu),
+            tooltip: 'Menu (coming soon)',
+            onPressed: null,
+            color: goldColor,
+            disabledColor: goldColor.withAlpha(140),
+            iconSize: 20,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+            visualDensity: VisualDensity.compact,
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -253,46 +296,52 @@ class _ReadingScreenState extends State<ReadingScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
-                    height: 36,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _mainPeriods.length,
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      itemBuilder: (context, index) {
-                        final period = _mainPeriods[index];
-                        final isSelected = (period.id == _selectedMainPeriodId);
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: SizedBox(
+                    height: 32,
+                    child: Row(
+                      children: [
+                        for (int index = 0; index < _mainPeriods.length; index++)
+                          Expanded(
+                            child: Builder(builder: (context) {
+                              final period = _mainPeriods[index];
+                              final isSelected = (period.id == _selectedMainPeriodId);
 
-                        return GestureDetector(
-                          onTap: () => _onMainPeriodTabSelected(period.id),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                            margin: const EdgeInsets.symmetric(horizontal: 2.0),
-                            decoration: BoxDecoration(
-                              color: isSelected ? goldColor : cardBg,
-                              borderRadius: BorderRadius.circular(6.0),
-                              border: Border.all(color: goldColor, width: 1.0),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${index + 1} ${period.title}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected ? (isDark ? BssColors.darkOakBg : Colors.white) : textColor,
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                                child: GestureDetector(
+                                  onTap: () => _onMainPeriodTabSelected(period.id),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? goldColor : cardBg,
+                                      borderRadius: BorderRadius.circular(6.0),
+                                      border: Border.all(color: goldColor, width: 1.0),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '${index + 1}',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: isSelected ? (isDark ? BssColors.darkOakBg : Colors.white) : textColor,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
+                              );
+                            }),
                           ),
-                        );
-                      },
+                      ],
                     ),
+                  ),
                   ),
                   if (_currentSubPeriods.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     SizedBox(
-                      height: 28,
+                      height: 34,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: _currentSubPeriods.length,
@@ -305,8 +354,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
                             onTap: () => _onSubPeriodSelected(sub.id),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 180),
-                              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-                              margin: const EdgeInsets.symmetric(horizontal: 3.0),
+                              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                              margin: const EdgeInsets.symmetric(horizontal: 2.0),
                               decoration: BoxDecoration(
                                 color: isSelected ? goldColor.withAlpha(64) : Colors.transparent,
                                 borderRadius: BorderRadius.circular(14.0),
@@ -314,7 +363,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                               ),
                               child: Center(
                                 child: Text(
-                                  '${index + 1} ${sub.title}',
+                                  sub.timeRange.isNotEmpty ? sub.timeRange : '${index + 1}',
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -334,26 +383,23 @@ class _ReadingScreenState extends State<ReadingScreen> {
             Expanded(
               child: Stack(
                 children: [
-                  ListView.builder(
-                    controller: _scrollController,
+                  ScrollablePositionedList.builder(
+                    itemScrollController: _itemScrollController,
+                    itemPositionsListener: _itemPositionsListener,
                     padding: const EdgeInsets.only(left: 12.0, right: 64.0, top: 8.0, bottom: 24.0),
                     itemCount: _feedItems.length,
                     itemBuilder: (context, index) {
                       final item = _feedItems[index];
-                      final key = _sectionKeys[item.section.id];
 
-                      return Container(
-                        key: key,
-                        margin: const EdgeInsets.only(bottom: 12.0),
-                        padding: const EdgeInsets.all(14.0),
-                        decoration: BoxDecoration(
-                          color: cardBg,
-                          borderRadius: BorderRadius.circular(8.0),
-                          border: Border.all(color: goldColor.withAlpha(102), width: 1.0),
-                        ),
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            if (index > 0 && item.isFirstInSubPeriod) ...[
+                              Divider(color: goldColor.withAlpha(90), thickness: 1.0),
+                              const SizedBox(height: 6),
+                            ],
                             if (item.isFirstInMainPeriod) ...[
                               Text(
                                 '${item.mainPeriod.id} ${item.mainPeriod.title}',
@@ -363,7 +409,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                             ],
                             if (item.isFirstInSubPeriod) ...[
                               Text(
-                                '${item.subPeriod.title}',
+                                item.subPeriod.title,
                                 style: TextStyle(fontFamily: 'Serif', fontSize: 13, fontWeight: FontWeight.w600, color: textColor),
                               ),
                               const SizedBox(height: 6),
@@ -374,10 +420,31 @@ class _ReadingScreenState extends State<ReadingScreen> {
                             ),
                             const SizedBox(height: 8),
                             ...item.verses.map((verse) => Padding(
-                              padding: const EdgeInsets.only(bottom: 6.0),
-                              child: Text(
-                                verse.quoteText,
-                                style: TextStyle(fontFamily: 'Serif', fontSize: 13, color: textColor),
+                              padding: const EdgeInsets.only(bottom: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Text(
+                                    verse.quoteText,
+                                    style: TextStyle(fontFamily: 'Serif', fontSize: 13, color: textColor),
+                                  ),
+                                  if (verse.bookTitle.isNotEmpty || verse.refDisplay.isNotEmpty) ...[
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      [
+                                        if (verse.bookTitle.isNotEmpty) verse.bookTitle,
+                                        if (verse.refDisplay.isNotEmpty) verse.refDisplay,
+                                      ].join(', '),
+                                      textAlign: TextAlign.right,
+                                      style: TextStyle(
+                                        fontFamily: 'Serif',
+                                        fontSize: 11,
+                                        fontStyle: FontStyle.italic,
+                                        color: subTextCol,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             )),
                           ],
@@ -409,7 +476,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                                 final isSelected = (railItem.section.id == _selectedSectionId);
 
                                 return GestureDetector(
-                                  onTap: () => _scrollToSection(railItem.section.id),
+                                  onTap: () => _onSectionRailSelected(railItem.section.id),
                                   child: Container(
                                     margin: const EdgeInsets.symmetric(vertical: 4.0),
                                     alignment: Alignment.center,
