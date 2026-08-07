@@ -35,12 +35,12 @@ class BssTheme {
         headlineMedium: TextStyle(
           color: BssColors.darkText,
           fontWeight: FontWeight.bold,
-          fontFamily: 'Serif',
+          fontFamily: 'NotoSerif',
         ),
         bodyLarge: TextStyle(
           color: BssColors.darkText,
           fontSize: 16.0,
-          fontFamily: 'Serif',
+          fontFamily: 'NotoSerif',
         ),
         bodyMedium: TextStyle(
           color: BssColors.subText,
@@ -66,12 +66,12 @@ class BssTheme {
         headlineMedium: TextStyle(
           color: BssColors.darkOakText,
           fontWeight: FontWeight.bold,
-          fontFamily: 'Serif',
+          fontFamily: 'NotoSerif',
         ),
         bodyLarge: TextStyle(
           color: BssColors.darkOakText,
           fontSize: 16.0,
-          fontFamily: 'Serif',
+          fontFamily: 'NotoSerif',
         ),
         bodyMedium: TextStyle(
           color: BssColors.darkOakSubText,

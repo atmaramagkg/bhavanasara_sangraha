@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:share_plus/share_plus.dart';
 import '../app_theme.dart';
 import '../models/lila_period.dart';
+import '../services/app_settings.dart';
 import '../services/bss_repository.dart';
+import '../widgets/app_menu_sheet.dart';
+import '../widgets/period_info_sheet.dart';
+import 'bookmarks_screen.dart';
+import 'books_screen.dart';
 
 class ReadingScreen extends StatefulWidget {
   final BssRepository repository;
@@ -207,6 +213,75 @@ class _ReadingScreenState extends State<ReadingScreen> {
     _scrollToSection(sectionId);
   }
 
+  void _openPeriodInfoSheet() async {
+    final int? liveCurrentId = await widget.repository.getCurrentMainPeriodId();
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => PeriodInfoSheet(
+        periods: _mainPeriods,
+        currentPeriodId: liveCurrentId ?? _selectedMainPeriodId,
+        onPeriodSelected: _onMainPeriodTabSelected,
+      ),
+    );
+  }
+
+  void _openBooksScreen() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => BooksScreen(repository: widget.repository)),
+    );
+  }
+
+  void _openAppMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => AppMenuSheet(
+        onOpenBookmarks: _openBookmarksScreen,
+        onShare: _shareCurrentSection,
+      ),
+    );
+  }
+
+  void _openBookmarksScreen() async {
+    final int? jumpToSectionId = await Navigator.of(context).push<int>(
+      MaterialPageRoute(builder: (_) => BookmarksScreen(repository: widget.repository)),
+    );
+    if (jumpToSectionId != null) {
+      _onSectionRailSelected(jumpToSectionId);
+    }
+  }
+
+  void _shareCurrentSection() {
+    final item = _feedItems.firstWhere(
+      (i) => i.section.id == _selectedSectionId,
+      orElse: () => _feedItems.first,
+    );
+
+    final buffer = StringBuffer()
+      ..writeln(item.section.title)
+      ..writeln();
+    for (final verse in item.verses) {
+      buffer.writeln(verse.quoteText);
+      if (verse.bookTitle.isNotEmpty || verse.refDisplay.isNotEmpty) {
+        buffer.writeln('— ${[verse.bookTitle, verse.refDisplay].where((s) => s.isNotEmpty).join(', ')}');
+      }
+      buffer.writeln();
+    }
+    buffer.write('Bhāvanāsāra Saṅgraha');
+
+    SharePlus.instance.share(ShareParams(text: buffer.toString()));
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -234,8 +309,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
           children: [
             IconButton(
               icon: const Icon(Icons.access_time),
-              tooltip: 'Current time (coming soon)',
-              onPressed: null,
+              tooltip: 'Time periods',
+              onPressed: _mainPeriods.isEmpty ? null : _openPeriodInfoSheet,
               color: goldColor,
               disabledColor: goldColor.withAlpha(140),
               iconSize: 20,
@@ -245,8 +320,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.menu_book_outlined),
-              tooltip: 'Cited scriptures (coming soon)',
-              onPressed: null,
+              tooltip: 'Scriptures quoted',
+              onPressed: _openBooksScreen,
               color: goldColor,
               disabledColor: goldColor.withAlpha(140),
               iconSize: 20,
@@ -258,6 +333,26 @@ class _ReadingScreenState extends State<ReadingScreen> {
         ),
         title: null,
         actions: [
+          ValueListenableBuilder<Set<int>>(
+            valueListenable: AppSettings.bookmarkedSectionIds,
+            builder: (context, bookmarks, _) {
+              final bool isBookmarked = bookmarks.contains(_selectedSectionId);
+              return IconButton(
+                icon: Icon(isBookmarked ? Icons.bookmark : Icons.bookmark_border),
+                tooltip: isBookmarked ? 'Remove bookmark' : 'Bookmark this section',
+                onPressed: _selectedSectionId == -1
+                    ? null
+                    : () => AppSettings.toggleBookmark(_selectedSectionId),
+                color: goldColor,
+                disabledColor: goldColor.withAlpha(140),
+                iconSize: 20,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                visualDensity: VisualDensity.compact,
+              );
+            },
+          ),
+          const SizedBox(width: 2),
           IconButton(
             icon: const Icon(Icons.search),
             tooltip: 'Search (coming soon)',
@@ -272,8 +367,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
           const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.menu),
-            tooltip: 'Menu (coming soon)',
-            onPressed: null,
+            tooltip: 'Menu',
+            onPressed: _openAppMenu,
             color: goldColor,
             disabledColor: goldColor.withAlpha(140),
             iconSize: 20,
@@ -383,7 +478,17 @@ class _ReadingScreenState extends State<ReadingScreen> {
             Expanded(
               child: Stack(
                 children: [
-                  ScrollablePositionedList.builder(
+                  ValueListenableBuilder<double>(
+                    valueListenable: AppSettings.fontScale,
+                    builder: (context, scale, child) {
+                      return MediaQuery(
+                        data: MediaQuery.of(context).copyWith(
+                          textScaler: TextScaler.linear(scale),
+                        ),
+                        child: child!,
+                      );
+                    },
+                    child: ScrollablePositionedList.builder(
                     itemScrollController: _itemScrollController,
                     itemPositionsListener: _itemPositionsListener,
                     padding: const EdgeInsets.only(left: 12.0, right: 64.0, top: 8.0, bottom: 24.0),
@@ -403,20 +508,20 @@ class _ReadingScreenState extends State<ReadingScreen> {
                             if (item.isFirstInMainPeriod) ...[
                               Text(
                                 '${item.mainPeriod.id} ${item.mainPeriod.title}',
-                                style: TextStyle(fontFamily: 'Serif', fontSize: 16, fontWeight: FontWeight.bold, color: goldColor),
+                                style: TextStyle(fontFamily: 'NotoSerif', fontSize: 16, fontWeight: FontWeight.bold, color: goldColor),
                               ),
                               const SizedBox(height: 4),
                             ],
                             if (item.isFirstInSubPeriod) ...[
                               Text(
                                 item.subPeriod.title,
-                                style: TextStyle(fontFamily: 'Serif', fontSize: 13, fontWeight: FontWeight.w600, color: textColor),
+                                style: TextStyle(fontFamily: 'NotoSerif', fontSize: 13, fontWeight: FontWeight.w600, color: textColor),
                               ),
                               const SizedBox(height: 6),
                             ],
                             Text(
                               item.section.title,
-                              style: TextStyle(fontFamily: 'Serif', fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
+                              style: TextStyle(fontFamily: 'NotoSerif', fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
                             ),
                             const SizedBox(height: 8),
                             ...item.verses.map((verse) => Padding(
@@ -426,7 +531,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                                 children: [
                                   Text(
                                     verse.quoteText,
-                                    style: TextStyle(fontFamily: 'Serif', fontSize: 13, color: textColor),
+                                    style: TextStyle(fontFamily: 'NotoSerif', fontSize: 13, color: textColor),
                                   ),
                                   if (verse.bookTitle.isNotEmpty || verse.refDisplay.isNotEmpty) ...[
                                     const SizedBox(height: 3),
@@ -437,7 +542,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                                       ].join(', '),
                                       textAlign: TextAlign.right,
                                       style: TextStyle(
-                                        fontFamily: 'Serif',
+                                        fontFamily: 'NotoSerif',
                                         fontSize: 11,
                                         fontStyle: FontStyle.italic,
                                         color: subTextCol,
@@ -451,6 +556,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                         ),
                       );
                     },
+                  ),
                   ),
                   Positioned(
                     right: 0,

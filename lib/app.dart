@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 
+import 'app_theme.dart';
 import 'screens/home_screen.dart';
+import 'services/app_settings.dart';
 
 class BhavanasaraApp extends StatelessWidget {
   const BhavanasaraApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Bhāvanāsāra Saṅgraha',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF7A3F00),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: const Color(0xFF7A3F00),
-        brightness: Brightness.dark,
-      ),
-      home: const HomeScreen(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: AppSettings.themeMode,
+      builder: (context, mode, _) {
+        return MaterialApp(
+          title: 'Bhāvanāsāra Saṅgraha',
+          debugShowCheckedModeBanner: false,
+          theme: BssTheme.parchmentTheme,
+          darkTheme: BssTheme.darkOakTheme,
+          themeMode: mode,
+          home: const HomeScreen(),
+        );
+      },
     );
   }
 }

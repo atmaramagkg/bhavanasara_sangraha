@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import '../models/lila_period.dart';
+import '../models/book.dart';
 
 class SubPeriod {
   final int id;
@@ -260,5 +261,55 @@ class BssRepository {
       if (within) return row['id'] as int?;
     }
     return results.first['id'] as int?;
+  }
+
+  /// All source scriptures, with how many quotes cite each one.
+  Future<List<Book>> getAllBooks({int languageId = 1}) async {
+    const query = '''
+      SELECT
+        b.id,
+        b.slug,
+        COALESCE(tt.translated_text, b.slug) AS title,
+        COALESCE(ta.translated_text, '') AS author,
+        (SELECT COUNT(*) FROM citations c WHERE c.source_book_id = b.id) AS quote_count
+      FROM books b
+      LEFT JOIN translations tt
+        ON tt.translation_key = b.title_key AND tt.language_id = ?
+      LEFT JOIN translations ta
+        ON ta.translation_key = b.author_key AND ta.language_id = ?
+      ORDER BY title ASC;
+    ''';
+
+    final List<Map<String, dynamic>> results =
+        await db.rawQuery(query, [languageId, languageId]);
+
+    return results.map((row) {
+      return Book(
+        id: (row['id'] as int?) ?? 0,
+        slug: (row['slug'] as String?) ?? '',
+        title: (row['title'] as String?) ?? '',
+        author: (row['author'] as String?) ?? '',
+        quoteCount: (row['quote_count'] as int?) ?? 0,
+      );
+    }).toList();
+  }
+
+  /// Looks up a handful of sections by id (used by the bookmarks list),
+  /// together with the main-period and subperiod they belong to.
+  Future<List<ContinuousReadingItem>> getSectionsByIds(
+    List<int> sectionIds, {
+    int languageId = 1,
+  }) async {
+    if (sectionIds.isEmpty) return [];
+
+    final List<ContinuousReadingItem> allItems = await loadFullContinuousFeed(languageId: languageId);
+    final Map<int, ContinuousReadingItem> bySectionId = {
+      for (final item in allItems) item.section.id: item,
+    };
+
+    return sectionIds
+        .map((id) => bySectionId[id])
+        .whereType<ContinuousReadingItem>()
+        .toList();
   }
 }

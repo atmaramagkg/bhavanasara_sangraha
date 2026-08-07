@@ -58,7 +58,7 @@ class _VerseReaderCardState extends State<VerseReaderCard> {
             widget.sectionTitle,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontFamily: 'Serif',
+              fontFamily: 'NotoSerif',
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: textColor,
@@ -118,7 +118,7 @@ class _VerseReaderCardState extends State<VerseReaderCard> {
                       verse.quoteText,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontFamily: 'Serif',
+                        fontFamily: 'NotoSerif',
                         fontSize: 15,
                         height: 1.5,
                         color: textColor,
@@ -129,7 +129,7 @@ class _VerseReaderCardState extends State<VerseReaderCard> {
                       '— ${verse.bookTitle} (${verse.refDisplay})',
                       textAlign: TextAlign.right,
                       style: TextStyle(
-                        fontFamily: 'Serif',
+                        fontFamily: 'NotoSerif',
                         fontSize: 11,
                         fontStyle: FontStyle.italic,
                         color: goldColor,
