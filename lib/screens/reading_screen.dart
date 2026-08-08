@@ -7,8 +7,10 @@ import '../services/app_settings.dart';
 import '../services/bss_repository.dart';
 import '../widgets/app_menu_sheet.dart';
 import '../widgets/period_info_sheet.dart';
+import '../utils/text_utils.dart';
 import 'bookmarks_screen.dart';
 import 'books_screen.dart';
+import 'search_screen.dart';
 
 class ReadingScreen extends StatefulWidget {
   final BssRepository repository;
@@ -39,6 +41,9 @@ class _ReadingScreenState extends State<ReadingScreen> {
   int _selectedMainPeriodId = 1;
   int _selectedSubPeriodId = -1;
   int _selectedSectionId = -1;
+  int? _highlightedQuoteId;
+  String? _highlightQuery;
+  final GlobalKey _highlightedQuoteKey = GlobalKey();
   bool _isLoading = true;
   bool _isProgrammaticScroll = false;
 
@@ -187,6 +192,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
       _currentSubPeriods = subPeriods;
       _selectedSubPeriodId = targetItem.subPeriod.id;
       _selectedSectionId = targetItem.section.id;
+      _highlightedQuoteId = null;
+      _highlightQuery = null;
     });
 
     _scrollToSection(targetItem.section.id);
@@ -203,14 +210,92 @@ class _ReadingScreenState extends State<ReadingScreen> {
       _selectedSubPeriodId = subPeriodId;
       _selectedMainPeriodId = targetItem.mainPeriod.id;
       _selectedSectionId = targetItem.section.id;
+      _highlightedQuoteId = null;
+      _highlightQuery = null;
     });
 
     _scrollToSection(targetItem.section.id);
   }
 
   void _onSectionRailSelected(int sectionId) {
-    setState(() => _selectedSectionId = sectionId);
+    setState(() {
+      _selectedSectionId = sectionId;
+      _highlightedQuoteId = null;
+      _highlightQuery = null;
+    });
     _scrollToSection(sectionId);
+  }
+
+  /// Jumps to an arbitrary section that might belong to a *different* main
+  /// period than the one currently open -- used by search results and
+  /// bookmarks, unlike the rail/tab handlers above which only ever jump
+  /// within the period already on screen.
+  Future<void> _jumpToSection(int sectionId) async {
+    final targetIndex = _feedItems.indexWhere((item) => item.section.id == sectionId);
+    if (targetIndex == -1) return;
+    final targetItem = _feedItems[targetIndex];
+
+    final bool mainPeriodChanged = targetItem.mainPeriod.id != _selectedMainPeriodId;
+    final List<SubPeriod> subPeriods = mainPeriodChanged
+        ? await widget.repository.getSubPeriods(targetItem.mainPeriod.id)
+        : _currentSubPeriods;
+
+    if (!mounted) return;
+
+    setState(() {
+      _selectedMainPeriodId = targetItem.mainPeriod.id;
+      _selectedSubPeriodId = targetItem.subPeriod.id;
+      _selectedSectionId = targetItem.section.id;
+      _currentSubPeriods = subPeriods;
+      // Callers that want a highlight (search) set it themselves right
+      // after this returns; every other caller (bookmarks) wants none.
+      _highlightedQuoteId = null;
+      _highlightQuery = null;
+    });
+
+    await _scrollToSection(sectionId);
+  }
+
+  /// Renders a quote's text, highlighting the search match if this is the
+  /// quote the user just navigated here from search to look at.
+  Widget _buildQuoteText(VerseDetail verse, Color textColor, Color goldColor) {
+    final baseStyle = TextStyle(fontFamily: 'NotoSerif', fontSize: 13, color: textColor);
+
+    if (_highlightedQuoteId == null ||
+        verse.quoteId != _highlightedQuoteId ||
+        _highlightQuery == null) {
+      return Text(verse.quoteText, style: baseStyle);
+    }
+
+    final String normalizedText = normalizeForSearch(verse.quoteText);
+    final String normalizedQuery = normalizeForSearch(_highlightQuery!);
+    final int matchIndex = normalizedQuery.isEmpty ? -1 : normalizedText.indexOf(normalizedQuery);
+
+    if (matchIndex == -1) {
+      return Text(verse.quoteText, style: baseStyle);
+    }
+
+    final String before = verse.quoteText.substring(0, matchIndex);
+    final String matched = verse.quoteText.substring(matchIndex, matchIndex + normalizedQuery.length);
+    final String after = verse.quoteText.substring(matchIndex + normalizedQuery.length);
+
+    return RichText(
+      text: TextSpan(
+        style: baseStyle,
+        children: [
+          TextSpan(text: before),
+          TextSpan(
+            text: matched,
+            style: TextStyle(
+              backgroundColor: goldColor.withAlpha(90),
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          TextSpan(text: after),
+        ],
+      ),
+    );
   }
 
   void _openPeriodInfoSheet() async {
@@ -238,6 +323,44 @@ class _ReadingScreenState extends State<ReadingScreen> {
     );
   }
 
+  void _openSearch() async {
+    final SearchResult? result = await Navigator.of(context).push<SearchResult>(
+      MaterialPageRoute(builder: (_) => SearchScreen(feedItems: _feedItems)),
+    );
+    if (result == null) return;
+
+    // Wait for the section-level scroll to actually finish before doing a
+    // fine adjustment -- otherwise the two animations fight each other.
+    await _jumpToSection(result.sectionId);
+    if (!mounted) return;
+
+    setState(() {
+      _highlightedQuoteId = result.quoteId;
+      _highlightQuery = result.query.trim().isEmpty ? null : result.query;
+    });
+
+    // The highlighted quote might be several quotes deep into a long
+    // section, so landing on the section's title isn't enough to
+    // guarantee it's actually on screen. Once the highlight rebuild has
+    // been laid out (next frame), nudge it into view specifically.
+    if (result.quoteId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollHighlightIntoView());
+    }
+  }
+
+  void _scrollHighlightIntoView() {
+    final BuildContext? highlightContext = _highlightedQuoteKey.currentContext;
+    if (highlightContext == null) return;
+
+    Scrollable.ensureVisible(
+      highlightContext,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOut,
+      alignment: 0.25,
+      alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+    );
+  }
+
   void _openAppMenu() {
     showModalBottomSheet(
       context: context,
@@ -257,7 +380,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
       MaterialPageRoute(builder: (_) => BookmarksScreen(repository: widget.repository)),
     );
     if (jumpToSectionId != null) {
-      _onSectionRailSelected(jumpToSectionId);
+      _jumpToSection(jumpToSectionId);
     }
   }
 
@@ -272,8 +395,12 @@ class _ReadingScreenState extends State<ReadingScreen> {
       ..writeln();
     for (final verse in item.verses) {
       buffer.writeln(verse.quoteText);
-      if (verse.bookTitle.isNotEmpty || verse.refDisplay.isNotEmpty) {
-        buffer.writeln('— ${[verse.bookTitle, verse.refDisplay].where((s) => s.isNotEmpty).join(', ')}');
+      // refDisplay already includes the book name + verse ref (e.g.
+      // "Kṛṣṇa-bhāvanāmṛtam 1.1-9"), so it's shown alone -- pairing it
+      // with bookTitle as well used to duplicate the book name.
+      final String citation = verse.refDisplay.isNotEmpty ? verse.refDisplay : verse.bookTitle;
+      if (citation.isNotEmpty) {
+        buffer.writeln('— $citation');
       }
       buffer.writeln();
     }
@@ -355,8 +482,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
           const SizedBox(width: 2),
           IconButton(
             icon: const Icon(Icons.search),
-            tooltip: 'Search (coming soon)',
-            onPressed: null,
+            tooltip: 'Search',
+            onPressed: _openSearch,
             color: goldColor,
             disabledColor: goldColor.withAlpha(140),
             iconSize: 20,
@@ -525,21 +652,19 @@ class _ReadingScreenState extends State<ReadingScreen> {
                             ),
                             const SizedBox(height: 8),
                             ...item.verses.map((verse) => Padding(
+                              key: verse.quoteId == _highlightedQuoteId ? _highlightedQuoteKey : null,
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  Text(
-                                    verse.quoteText,
-                                    style: TextStyle(fontFamily: 'NotoSerif', fontSize: 13, color: textColor),
-                                  ),
-                                  if (verse.bookTitle.isNotEmpty || verse.refDisplay.isNotEmpty) ...[
+                                  _buildQuoteText(verse, textColor, goldColor),
+                                  // refDisplay already includes the book name +
+                                  // verse ref -- showing bookTitle alongside it
+                                  // used to duplicate the book name.
+                                  if (verse.refDisplay.isNotEmpty || verse.bookTitle.isNotEmpty) ...[
                                     const SizedBox(height: 3),
                                     Text(
-                                      [
-                                        if (verse.bookTitle.isNotEmpty) verse.bookTitle,
-                                        if (verse.refDisplay.isNotEmpty) verse.refDisplay,
-                                      ].join(', '),
+                                      verse.refDisplay.isNotEmpty ? verse.refDisplay : verse.bookTitle,
                                       textAlign: TextAlign.right,
                                       style: TextStyle(
                                         fontFamily: 'NotoSerif',

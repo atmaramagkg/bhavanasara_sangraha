@@ -126,7 +126,10 @@ class _VerseReaderCardState extends State<VerseReaderCard> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '— ${verse.bookTitle} (${verse.refDisplay})',
+                      // refDisplay already includes the book name + verse
+                      // ref -- pairing it with bookTitle used to duplicate
+                      // the book name.
+                      '— ${verse.refDisplay.isNotEmpty ? verse.refDisplay : verse.bookTitle}',
                       textAlign: TextAlign.right,
                       style: TextStyle(
                         fontFamily: 'NotoSerif',
