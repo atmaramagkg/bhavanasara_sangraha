@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../services/app_settings.dart';
 import '../services/bss_repository.dart';
+import '../services/translations.dart';
 
 /// Lists every bookmarked lila section. Tapping one returns its section id
 /// to the caller (the reading screen), which scrolls to it.
@@ -19,7 +20,7 @@ class BookmarksScreen extends StatelessWidget {
     final subTextCol = isDark ? BssColors.darkOakSubText : BssColors.subText;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bookmarks')),
+      appBar: AppBar(title: Text(Translations.t('menu.bookmarks'))),
       body: ValueListenableBuilder<Set<int>>(
         valueListenable: AppSettings.bookmarkedSectionIds,
         builder: (context, bookmarkedIds, _) {
@@ -28,7 +29,7 @@ class BookmarksScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  'No bookmarks yet. Tap the bookmark icon while reading to save a section.',
+                  Translations.t('screen.bookmarks.empty'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: subTextCol),
                 ),

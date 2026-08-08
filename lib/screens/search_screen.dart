@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../services/bss_repository.dart';
+import '../services/translations.dart';
 import '../utils/text_utils.dart';
 
 class SearchResult {
@@ -33,16 +34,32 @@ class _SearchHit {
 /// instant on every keystroke -- no database changes, no indexing needed.
 class SearchScreen extends StatefulWidget {
   final List<ContinuousReadingItem> feedItems;
+  final String initialQuery;
 
-  const SearchScreen({super.key, required this.feedItems});
+  const SearchScreen({
+    super.key,
+    required this.feedItems,
+    this.initialQuery = '',
+  });
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  final TextEditingController _controller = TextEditingController();
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialQuery);
   List<_SearchHit> _results = const [];
+  bool _searched = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialQuery.trim().isNotEmpty) {
+      // Restore the previous search immediately when reopening the screen.
+      _performSearch();
+    }
+  }
 
   @override
   void dispose() {
@@ -50,10 +67,22 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  void _onQueryChanged(String rawQuery) {
-    final String query = normalizeForSearch(rawQuery.trim());
+  void _onTextChanged(String rawQuery) {
+    // Only reflect the typing state (e.g. show/hide the clear button);
+    // the actual search runs when the user presses the Search button.
+    setState(() {
+      _searched = false;
+      _results = const [];
+    });
+  }
+
+  void _performSearch() {
+    final String query = normalizeForSearch(_controller.text.trim());
     if (query.isEmpty) {
-      setState(() => _results = const []);
+      setState(() {
+        _searched = false;
+        _results = const [];
+      });
       return;
     }
 
@@ -105,7 +134,10 @@ class _SearchScreenState extends State<SearchScreen> {
       }
     }
 
-    setState(() => _results = [...quoteMatches, ...titleOnlyMatches]);
+    setState(() {
+      _searched = true;
+      _results = [...quoteMatches, ...titleOnlyMatches];
+    });
   }
 
   @override
@@ -120,21 +152,26 @@ class _SearchScreenState extends State<SearchScreen> {
         title: TextField(
           controller: _controller,
           autofocus: true,
-          onChanged: _onQueryChanged,
+          onChanged: _onTextChanged,
+          onSubmitted: (_) => _performSearch(),
           style: TextStyle(fontFamily: 'NotoSerif', color: textColor),
           decoration: InputDecoration(
-            hintText: 'Search quotes, topics, scriptures…',
+            hintText: Translations.t('screen.search.hint'),
             hintStyle: TextStyle(color: subTextCol),
             border: InputBorder.none,
           ),
         ),
         actions: [
+          TextButton(
+            onPressed: _performSearch,
+            child: Text(Translations.t('screen.search.submit')),
+          ),
           if (_controller.text.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.close),
               onPressed: () {
                 _controller.clear();
-                _onQueryChanged('');
+                _onTextChanged('');
               },
             ),
         ],
@@ -144,13 +181,12 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildBody(BuildContext context, Color goldColor, Color textColor, Color subTextCol) {
-    if (_controller.text.trim().isEmpty) {
+    if (!_searched) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'Search across all quotes, topic titles, and cited scriptures. '
-            'Diacritics are optional -- "krishna" will find "Kṛṣṇa".',
+            Translations.t('screen.search.empty'),
             textAlign: TextAlign.center,
             style: TextStyle(color: subTextCol),
           ),
@@ -160,7 +196,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
     if (_results.isEmpty) {
       return Center(
-        child: Text('No matches found.', style: TextStyle(color: subTextCol)),
+        child: Text(
+          Translations.t('screen.search.noResults'),
+          style: TextStyle(color: subTextCol),
+        ),
       );
     }
 

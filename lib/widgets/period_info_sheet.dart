@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/lila_period.dart';
+import '../services/translations.dart';
 import 'lila_wheel.dart';
 
 /// Bottom-sheet content shown from the clock icon: the 8-period wheel,
@@ -11,11 +12,20 @@ class PeriodInfoSheet extends StatelessWidget {
   final int currentPeriodId;
   final ValueChanged<int> onPeriodSelected;
 
+  /// Name of the sub-period the clock is in right now (DB-driven).
+  final String? currentSubPeriodTitle;
+
+  /// 24-hour time range of that sub-period (e.g. "04:24 - 05:36"),
+  /// shown without brackets on its own line.
+  final String? currentSubPeriodTimeRange;
+
   const PeriodInfoSheet({
     super.key,
     required this.periods,
     required this.currentPeriodId,
     required this.onPeriodSelected,
+    this.currentSubPeriodTitle,
+    this.currentSubPeriodTimeRange,
   });
 
   /// Parses "HH:MM" into minutes-since-midnight.
@@ -34,6 +44,21 @@ class PeriodInfoSheet extends StatelessWidget {
     return (parts[0], parts[1]);
   }
 
+  /// Current ghatikā number (1..60) derived from the clock time. The 24-hour
+  /// day starts at the first main period's time_start (03:36); each ghatikā
+  /// spans 24 minutes, so 60 ghatikās cover the whole day.
+  int? _currentGhatika() {
+    if (periods.isEmpty) return null;
+    final (String, String)? firstRange = _splitRange(periods.first.timeRange);
+    final int? dayStart = firstRange != null ? _minutesOf(firstRange.$1) : null;
+    if (dayStart == null) return null;
+
+    final DateTime now = DateTime.now();
+    final int nowMinutes = now.hour * 60 + now.minute;
+    final int elapsed = ((nowMinutes - dayStart) % (24 * 60) + 24 * 60) % (24 * 60);
+    return elapsed ~/ 24 + 1;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -46,6 +71,7 @@ class PeriodInfoSheet extends StatelessWidget {
     final LilaPeriod? next = periods.isNotEmpty
         ? periods[(currentIndex + 1) % periods.length]
         : null;
+    final int? ghatika = _currentGhatika();
 
     String? countdown;
     if (next != null) {
@@ -109,7 +135,7 @@ class PeriodInfoSheet extends StatelessWidget {
               const SizedBox(height: 18),
               if (current != null) ...[
                 Text(
-                  'Current Period',
+                  Translations.t('period.info.current'),
                   style: TextStyle(fontSize: 12, color: subTextCol),
                 ),
                 const SizedBox(height: 2),
@@ -123,6 +149,47 @@ class PeriodInfoSheet extends StatelessWidget {
                   ),
                 ),
                 Text(current.timeRange, style: TextStyle(color: subTextCol)),
+                if (currentSubPeriodTitle != null) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    Translations.t('period.info.currentSub'),
+                    style: TextStyle(fontSize: 12, color: subTextCol),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    currentSubPeriodTitle!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: 'NotoSerif',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: goldColor,
+                    ),
+                  ),
+                  if (currentSubPeriodTimeRange?.isNotEmpty ?? false) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      currentSubPeriodTimeRange!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: subTextCol),
+                    ),
+                  ],
+                  if (ghatika != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      Translations.t('period.ghatika.count').replaceAll(
+                        '{count}',
+                        '$ghatika',
+                      ),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: goldColor,
+                      ),
+                    ),
+                  ],
+                ],
               ],
             ],
           ),

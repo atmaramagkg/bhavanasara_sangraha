@@ -4,6 +4,7 @@ import '../app_theme.dart';
 import '../models/book.dart';
 import '../services/bss_repository.dart';
 import '../services/translations.dart';
+import 'book_reader_screen.dart';
 
 /// All source scriptures this compilation quotes from.
 class BooksScreen extends StatelessWidget {
@@ -49,6 +50,11 @@ class BooksScreen extends StatelessWidget {
                         style: TextStyle(fontSize: 12, color: goldColor),
                       )
                     : null,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => BookReaderScreen(repository: repository, book: b),
+                  ),
+                ),
               );
             },
           );

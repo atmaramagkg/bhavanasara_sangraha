@@ -131,7 +131,7 @@ class _LanguageDialog extends StatelessWidget {
         return AlertDialog(
           title: Text(Translations.t('menu.language')),
           content: FutureBuilder<List<AvailableLanguage>>(
-            future: AppDatabase.instance.availableLanguages(),
+            future: AppDatabase.availableLanguages(),
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
                 return const SizedBox(

@@ -32,10 +32,10 @@ class HomeScreen extends StatelessWidget {
 
         final repository = BssRepository(db);
 
-        // Open on whichever main period the clock says it is right now,
-        // falling back to period 1 if that lookup ever fails.
-        return FutureBuilder<int?>(
-          future: repository.getCurrentMainPeriodId(),
+        // Open on whichever period (main + sub) the clock says it is right
+        // now, falling back to period 1 if that lookup ever fails.
+        return FutureBuilder<({int mainPeriodId, int subPeriodId})?>(
+          future: repository.getCurrentPeriodPair(),
           builder: (context, periodSnapshot) {
             if (periodSnapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
@@ -43,9 +43,11 @@ class HomeScreen extends StatelessWidget {
               );
             }
 
+            final current = periodSnapshot.data;
             return ReadingScreen(
               repository: repository,
-              initialPeriodId: periodSnapshot.data ?? 1,
+              initialPeriodId: current?.mainPeriodId ?? 1,
+              initialSubPeriodId: current?.subPeriodId,
             );
           },
         );

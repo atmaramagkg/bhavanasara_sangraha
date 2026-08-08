@@ -5,21 +5,25 @@ import '../app_theme.dart';
 import '../models/lila_period.dart';
 import '../services/app_settings.dart';
 import '../services/bss_repository.dart';
+import '../services/translations.dart';
 import '../widgets/app_menu_sheet.dart';
 import '../widgets/period_info_sheet.dart';
 import '../utils/text_utils.dart';
 import 'bookmarks_screen.dart';
 import 'books_screen.dart';
 import 'search_screen.dart';
+import 'verse_detail_screen.dart';
 
 class ReadingScreen extends StatefulWidget {
   final BssRepository repository;
   final int initialPeriodId;
+  final int? initialSubPeriodId;
 
   const ReadingScreen({
     super.key,
     required this.repository,
     this.initialPeriodId = 1,
+    this.initialSubPeriodId,
   });
 
   @override
@@ -43,6 +47,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
   int _selectedSectionId = -1;
   int? _highlightedQuoteId;
   String? _highlightQuery;
+  String _lastSearchQuery = '';
   final GlobalKey _highlightedQuoteKey = GlobalKey();
   bool _isLoading = true;
   bool _isProgrammaticScroll = false;
@@ -76,9 +81,21 @@ class _ReadingScreenState extends State<ReadingScreen> {
 
       int initialIndex = 0;
       if (feedItems.isNotEmpty) {
-        initialIndex = feedItems.indexWhere(
-          (item) => item.mainPeriod.id == _selectedMainPeriodId,
-        );
+        // Land on the exact sub period the clock says it is right now, not
+        // just the start of its main period (e.g. nishanta_2 instead of
+        // nishanta_1). Falls back to the main period if the sub period has
+        // no sections in the feed.
+        final int? targetSubPeriodId = widget.initialSubPeriodId;
+        initialIndex = targetSubPeriodId != null
+            ? feedItems.indexWhere(
+                (item) => item.subPeriod.id == targetSubPeriodId,
+              )
+            : -1;
+        if (initialIndex == -1) {
+          initialIndex = feedItems.indexWhere(
+            (item) => item.mainPeriod.id == _selectedMainPeriodId,
+          );
+        }
         if (initialIndex == -1) initialIndex = 0;
 
         final targetItem = feedItems[initialIndex];
@@ -299,7 +316,23 @@ class _ReadingScreenState extends State<ReadingScreen> {
   }
 
   void _openPeriodInfoSheet() async {
-    final int? liveCurrentId = await widget.repository.getCurrentMainPeriodId();
+    final ({int mainPeriodId, int subPeriodId})? currentPair =
+        await widget.repository.getCurrentPeriodPair();
+    final int? liveCurrentId = currentPair?.mainPeriodId;
+
+    String? currentSubPeriodTitle;
+    String? currentSubPeriodTimeRange;
+    if (currentPair != null) {
+      final List<SubPeriod> subPeriods =
+          await widget.repository.getSubPeriods(currentPair.mainPeriodId);
+      for (final sub in subPeriods) {
+        if (sub.id == currentPair.subPeriodId) {
+          currentSubPeriodTitle = sub.title;
+          currentSubPeriodTimeRange = sub.timeRange;
+          break;
+        }
+      }
+    }
     if (!mounted) return;
 
     showModalBottomSheet(
@@ -313,6 +346,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
         periods: _mainPeriods,
         currentPeriodId: liveCurrentId ?? _selectedMainPeriodId,
         onPeriodSelected: _onMainPeriodTabSelected,
+        currentSubPeriodTitle: currentSubPeriodTitle,
+        currentSubPeriodTimeRange: currentSubPeriodTimeRange,
       ),
     );
   }
@@ -323,11 +358,29 @@ class _ReadingScreenState extends State<ReadingScreen> {
     );
   }
 
+  void _openVerseDetail(int verseId) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => VerseDetailScreen(
+          repository: widget.repository,
+          verseId: verseId,
+        ),
+      ),
+    );
+  }
+
   void _openSearch() async {
     final SearchResult? result = await Navigator.of(context).push<SearchResult>(
-      MaterialPageRoute(builder: (_) => SearchScreen(feedItems: _feedItems)),
+      MaterialPageRoute(
+        builder: (_) => SearchScreen(
+          feedItems: _feedItems,
+          initialQuery: _lastSearchQuery,
+        ),
+      ),
     );
     if (result == null) return;
+
+    _lastSearchQuery = result.query;
 
     // Wait for the section-level scroll to actually finish before doing a
     // fine adjustment -- otherwise the two animations fight each other.
@@ -415,7 +468,6 @@ class _ReadingScreenState extends State<ReadingScreen> {
     final goldColor = isDark ? BssColors.darkOakGold : BssColors.goldAccent;
     final cardBg = isDark ? BssColors.darkOakCard : BssColors.parchmentCard;
     final textColor = isDark ? BssColors.darkOakText : BssColors.darkText;
-    final subTextCol = isDark ? BssColors.darkOakSubText : BssColors.subText;
 
     if (_isLoading) {
       return const Scaffold(
@@ -482,7 +534,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
           const SizedBox(width: 2),
           IconButton(
             icon: const Icon(Icons.search),
-            tooltip: 'Search',
+            tooltip: Translations.t('screen.search.submit'),
             onPressed: _openSearch,
             color: goldColor,
             disabledColor: goldColor.withAlpha(140),
@@ -641,7 +693,9 @@ class _ReadingScreenState extends State<ReadingScreen> {
                             ],
                             if (item.isFirstInSubPeriod) ...[
                               Text(
-                                item.subPeriod.title,
+                                item.subPeriod.timeRange.isNotEmpty
+                                    ? '${item.subPeriod.title} · ${item.subPeriod.timeRange}'
+                                    : item.subPeriod.title,
                                 style: TextStyle(fontFamily: 'NotoSerif', fontSize: 13, fontWeight: FontWeight.w600, color: textColor),
                               ),
                               const SizedBox(height: 6),
@@ -660,17 +714,30 @@ class _ReadingScreenState extends State<ReadingScreen> {
                                   _buildQuoteText(verse, textColor, goldColor),
                                   // refDisplay already includes the book name +
                                   // verse ref -- showing bookTitle alongside it
-                                  // used to duplicate the book name.
+                                  // used to duplicate the book name. The ref is
+                                  // a link into the verses table: tapping it
+                                  // opens the full verse record.
                                   if (verse.refDisplay.isNotEmpty || verse.bookTitle.isNotEmpty) ...[
                                     const SizedBox(height: 3),
-                                    Text(
-                                      verse.refDisplay.isNotEmpty ? verse.refDisplay : verse.bookTitle,
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(
-                                        fontFamily: 'NotoSerif',
-                                        fontSize: 11,
-                                        fontStyle: FontStyle.italic,
-                                        color: subTextCol,
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: GestureDetector(
+                                        onTap: verse.verseId != null && verse.verseId! > 0
+                                            ? () => _openVerseDetail(verse.verseId!)
+                                            : null,
+                                        child: Text(
+                                          verse.refDisplay.isNotEmpty ? verse.refDisplay : verse.bookTitle,
+                                          style: TextStyle(
+                                            fontFamily: 'NotoSerif',
+                                            fontSize: 11,
+                                            fontStyle: FontStyle.italic,
+                                            color: goldColor,
+                                            decoration: verse.verseId != null && verse.verseId! > 0
+                                                ? TextDecoration.underline
+                                                : TextDecoration.none,
+                                            decorationColor: goldColor.withAlpha(140),
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ],
