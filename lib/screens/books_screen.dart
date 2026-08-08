@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/book.dart';
 import '../services/bss_repository.dart';
+import '../services/translations.dart';
 
 /// All source scriptures this compilation quotes from.
 class BooksScreen extends StatelessWidget {
@@ -18,7 +19,7 @@ class BooksScreen extends StatelessWidget {
     final subTextCol = isDark ? BssColors.darkOakSubText : BssColors.subText;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Scriptures Quoted')),
+      appBar: AppBar(title: Text(Translations.t('screen.books.title'))),
       body: FutureBuilder<List<Book>>(
         future: repository.getAllBooks(),
         builder: (context, snapshot) {
@@ -27,7 +28,7 @@ class BooksScreen extends StatelessWidget {
           }
           final books = snapshot.data ?? const [];
           if (books.isEmpty) {
-            return const Center(child: Text('No scriptures found.'));
+            return Center(child: Text(Translations.t('screen.books.empty')));
           }
 
           return ListView.separated(
@@ -44,7 +45,7 @@ class BooksScreen extends StatelessWidget {
                 subtitle: b.author.isNotEmpty ? Text(b.author, style: TextStyle(color: subTextCol)) : null,
                 trailing: b.quoteCount > 0
                     ? Text(
-                        '${b.quoteCount} quote${b.quoteCount == 1 ? '' : 's'}',
+                        '${b.quoteCount} ${Translations.plural('common.quote', b.quoteCount)}',
                         style: TextStyle(fontSize: 12, color: goldColor),
                       )
                     : null,

@@ -1,9 +1,12 @@
 // widgets/app_menu_sheet.dart
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
+import '../core/database/app_database.dart';
 import '../services/app_settings.dart';
+import '../services/translations.dart';
 
 /// Content of the hamburger menu: language, theme, bookmarks, share.
+/// All labels come from the `translations` table of the active database.
 class AppMenuSheet extends StatelessWidget {
   final VoidCallback onOpenBookmarks;
   final VoidCallback onShare;
@@ -35,21 +38,37 @@ class AppMenuSheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            ListTile(
-              leading: Icon(Icons.language, color: goldColor),
-              title: Text('Language', style: TextStyle(color: textColor)),
-              subtitle: const Text('English'),
-              onTap: () {
-                Navigator.of(context).pop();
-                showDialog(
-                  context: context,
-                  builder: (_) => const _LanguageDialog(),
+            ValueListenableBuilder<Locale>(
+              valueListenable: AppSettings.locale,
+              builder: (context, locale, _) {
+                return ListTile(
+                  leading: Icon(Icons.language, color: goldColor),
+                  title: Text(
+                    Translations.t('menu.language'),
+                    style: TextStyle(color: textColor),
+                  ),
+                  subtitle: Text(
+                    locale.languageCode == 'ru'
+                        ? Translations.t('language.russian')
+                        : Translations.t('language.english'),
+                    style: TextStyle(color: textColor.withAlpha(180)),
+                  ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    showDialog(
+                      context: context,
+                      builder: (_) => const _LanguageDialog(),
+                    );
+                  },
                 );
               },
             ),
             ListTile(
               leading: Icon(Icons.palette_outlined, color: goldColor),
-              title: Text('Theme', style: TextStyle(color: textColor)),
+              title: Text(
+                Translations.t('menu.theme'),
+                style: TextStyle(color: textColor),
+              ),
               onTap: () {
                 Navigator.of(context).pop();
                 showDialog(
@@ -60,7 +79,10 @@ class AppMenuSheet extends StatelessWidget {
             ),
             ListTile(
               leading: Icon(Icons.text_fields, color: goldColor),
-              title: Text('Text Size', style: TextStyle(color: textColor)),
+              title: Text(
+                Translations.t('menu.textSize'),
+                style: TextStyle(color: textColor),
+              ),
               onTap: () {
                 Navigator.of(context).pop();
                 showDialog(
@@ -71,7 +93,10 @@ class AppMenuSheet extends StatelessWidget {
             ),
             ListTile(
               leading: Icon(Icons.bookmark_outline, color: goldColor),
-              title: Text('Bookmarks', style: TextStyle(color: textColor)),
+              title: Text(
+                Translations.t('menu.bookmarks'),
+                style: TextStyle(color: textColor),
+              ),
               onTap: () {
                 Navigator.of(context).pop();
                 onOpenBookmarks();
@@ -79,7 +104,10 @@ class AppMenuSheet extends StatelessWidget {
             ),
             ListTile(
               leading: Icon(Icons.share_outlined, color: goldColor),
-              title: Text('Share', style: TextStyle(color: textColor)),
+              title: Text(
+                Translations.t('menu.share'),
+                style: TextStyle(color: textColor),
+              ),
               onTap: () {
                 Navigator.of(context).pop();
                 onShare();
@@ -97,18 +125,50 @@ class _LanguageDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Language'),
-      content: const Text(
-        'English is currently the only language available. '
-        'More languages may be added in a future update.',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('OK'),
-        ),
-      ],
+    return ValueListenableBuilder<Locale>(
+      valueListenable: AppSettings.locale,
+      builder: (context, locale, _) {
+        return AlertDialog(
+          title: Text(Translations.t('menu.language')),
+          content: FutureBuilder<List<AvailableLanguage>>(
+            future: AppDatabase.instance.availableLanguages(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const SizedBox(
+                  height: 120,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              final languages =
+                  snapshot.data ?? const <AvailableLanguage>[];
+              return RadioGroup<Locale>(
+                groupValue: locale,
+                onChanged: (Locale? value) {
+                  if (value != null) {
+                    Translations.setLanguage(value.languageCode);
+                  }
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final AvailableLanguage language in languages)
+                      RadioListTile<Locale>(
+                        title: Text(language.name),
+                        value: Locale(language.code),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(Translations.t('common.done')),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -122,34 +182,32 @@ class _ThemeDialog extends StatelessWidget {
       valueListenable: AppSettings.themeMode,
       builder: (context, mode, _) {
         return AlertDialog(
-          title: const Text('Theme'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RadioListTile<ThemeMode>(
-                title: const Text('Follow system'),
-                value: ThemeMode.system,
-                groupValue: mode,
-                onChanged: (m) => AppSettings.setThemeMode(m!),
-              ),
-              RadioListTile<ThemeMode>(
-                title: const Text('Light (Parchment)'),
-                value: ThemeMode.light,
-                groupValue: mode,
-                onChanged: (m) => AppSettings.setThemeMode(m!),
-              ),
-              RadioListTile<ThemeMode>(
-                title: const Text('Dark (Oak)'),
-                value: ThemeMode.dark,
-                groupValue: mode,
-                onChanged: (m) => AppSettings.setThemeMode(m!),
-              ),
-            ],
+          title: Text(Translations.t('menu.theme')),
+          content: RadioGroup<ThemeMode>(
+            groupValue: mode,
+            onChanged: (m) => AppSettings.setThemeMode(m!),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<ThemeMode>(
+                  title: Text(Translations.t('theme.followSystem')),
+                  value: ThemeMode.system,
+                ),
+                RadioListTile<ThemeMode>(
+                  title: Text(Translations.t('theme.lightParchment')),
+                  value: ThemeMode.light,
+                ),
+                RadioListTile<ThemeMode>(
+                  title: Text(Translations.t('theme.darkOak')),
+                  value: ThemeMode.dark,
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Done'),
+              child: Text(Translations.t('common.done')),
             ),
           ],
         );
@@ -167,12 +225,12 @@ class _FontSizeDialog extends StatelessWidget {
       valueListenable: AppSettings.fontScale,
       builder: (context, scale, _) {
         return AlertDialog(
-          title: const Text('Text Size'),
+          title: Text(Translations.t('menu.textSize')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Kṛṣṇa left the bower along with the sakhīs.',
+                Translations.t('sample.readingText'),
                 style: TextStyle(fontFamily: 'NotoSerif', fontSize: 15 * scale),
               ),
               const SizedBox(height: 16),
@@ -197,11 +255,11 @@ class _FontSizeDialog extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => AppSettings.setFontScale(1.0),
-              child: const Text('Reset'),
+              child: Text(Translations.t('common.reset')),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Done'),
+              child: Text(Translations.t('common.done')),
             ),
           ],
         );

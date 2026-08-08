@@ -12,6 +12,7 @@ class AppSettings {
   static const _themeModeKey = 'bss_theme_mode';
   static const _bookmarksKey = 'bss_bookmarked_section_ids';
   static const _fontScaleKey = 'bss_font_scale';
+  static const _localeKey = 'bss_locale';
 
   static const double minFontScale = 0.85;
   static const double maxFontScale = 1.6;
@@ -23,6 +24,12 @@ class AppSettings {
       ValueNotifier<Set<int>>(<int>{});
 
   static final ValueNotifier<double> fontScale = ValueNotifier<double>(1.0);
+
+  /// Currently selected UI language. Defaults to English so the app always
+  /// opens in English on first launch regardless of the device locale.
+  static final ValueNotifier<Locale> locale = ValueNotifier<Locale>(
+    const Locale('en'),
+  );
 
   static bool _loaded = false;
 
@@ -46,6 +53,11 @@ class AppSettings {
       fontScale.value = savedScale.clamp(minFontScale, maxFontScale);
     }
 
+    final String? savedLocale = prefs.getString(_localeKey);
+    if (savedLocale != null) {
+      locale.value = Locale(savedLocale);
+    }
+
     _loaded = true;
   }
 
@@ -60,6 +72,12 @@ class AppSettings {
     fontScale.value = clamped;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_fontScaleKey, clamped);
+  }
+
+  static Future<void> setLocale(Locale next) async {
+    locale.value = next;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_localeKey, next.languageCode);
   }
 
   static bool isBookmarked(int sectionId) =>
