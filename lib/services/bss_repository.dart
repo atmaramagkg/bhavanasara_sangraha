@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import '../models/lila_period.dart';
 import '../models/book.dart';
 import '../models/verse.dart';
+import '../models/danda.dart';
 
 class SubPeriod {
   final int id;
@@ -138,6 +139,56 @@ class BssRepository {
         timeRange: timeDisplay,
       );
     }).toList();
+  }
+
+  Future<List<Danda>> getDandas({int? languageId}) async {
+    final int langId = languageId ?? await _currentLanguageId();
+    const query = '''
+      SELECT
+        d.id,
+        d.main_period_id,
+        d.sort_order,
+        d.time_start,
+        d.time_end,
+        COALESCE(t.translated_text, d.description_key) AS description
+      FROM dandas d
+      LEFT JOIN translations t
+        ON d.description_key = t.translation_key
+       AND t.language_id = ?
+      ORDER BY d.sort_order ASC;
+    ''';
+
+    final List<Map<String, dynamic>> results =
+        await db.rawQuery(query, [langId]);
+
+    return results.map<Danda>((row) {
+      return Danda(
+        id: (row['id'] as int?) ?? 0,
+        mainPeriodId: (row['main_period_id'] as int?) ?? 0,
+        sortOrder: (row['sort_order'] as int?) ?? 0,
+        timeStart: (row['time_start'] as String?) ?? '',
+        timeEnd: (row['time_end'] as String?) ?? '',
+        description: (row['description'] as String?) ?? '',
+      );
+    }).toList();
+  }
+
+  /// Resolves the id of the currently selected language from `app_settings`,
+  /// falling back to the id of English ('en').
+  Future<int> _currentLanguageId() async {
+    String code = 'en';
+    final List<Map<String, dynamic>> settings = await db.rawQuery(
+      "SELECT setting_value FROM app_settings WHERE setting_key = 'selected_language_code'",
+    );
+    if (settings.isNotEmpty) {
+      code = settings.first['setting_value'] as String? ?? 'en';
+    }
+    final List<Map<String, dynamic>> languages = await db.rawQuery(
+      'SELECT id FROM languages WHERE code = ?',
+      [code],
+    );
+    if (languages.isNotEmpty) return languages.first['id'] as int;
+    return 1;
   }
 
   Future<List<LilaSectionItem>> getSectionsForPeriod(int periodNodeId, {int languageId = 1}) async {
@@ -334,6 +385,39 @@ class BssRepository {
         quoteCount: (row['quote_count'] as int?) ?? 0,
       );
     }).toList();
+  }
+
+  /// A single book's title (used to give the verse-detail screen book
+  /// context, since verses.ref_display alone -- e.g. "10.13.1" -- doesn't
+  /// say which scripture it's from).
+  Future<Book?> getBookById(int bookId, {int languageId = 1}) async {
+    const query = '''
+      SELECT
+        b.id,
+        b.slug,
+        COALESCE(tt.translated_text, b.slug) AS title,
+        COALESCE(ta.translated_text, '') AS author
+      FROM books b
+      LEFT JOIN translations tt
+        ON tt.translation_key = b.title_key AND tt.language_id = ?
+      LEFT JOIN translations ta
+        ON ta.translation_key = b.author_key AND ta.language_id = ?
+      WHERE b.id = ?
+      LIMIT 1;
+    ''';
+
+    final List<Map<String, dynamic>> results =
+        await db.rawQuery(query, [languageId, languageId, bookId]);
+    if (results.isEmpty) return null;
+
+    final row = results.first;
+    return Book(
+      id: (row['id'] as int?) ?? 0,
+      slug: (row['slug'] as String?) ?? '',
+      title: (row['title'] as String?) ?? '',
+      author: (row['author'] as String?) ?? '',
+      quoteCount: 0,
+    );
   }
 
   /// All verses of a book from the `verses` table, ordered the way they

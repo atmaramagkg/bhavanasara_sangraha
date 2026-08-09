@@ -63,11 +63,13 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(12),
-            itemCount: verses.length,
-            separatorBuilder: (_, _) => Divider(height: 1, color: goldColor.withAlpha(60)),
-            itemBuilder: (context, index) {
+          return SafeArea(
+            top: false,
+            child: ListView.separated(
+              padding: const EdgeInsets.all(12),
+              itemCount: verses.length,
+              separatorBuilder: (_, _) => Divider(height: 1, color: goldColor.withAlpha(60)),
+              itemBuilder: (context, index) {
               final v = verses[index];
               return InkWell(
                 onTap: () {
@@ -114,7 +116,6 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             height: 1.4,
-                            fontFamily: 'NotoSerif',
                             color: textColor,
                           ),
                         ),
@@ -130,6 +131,7 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
                 ),
               );
             },
+            ),
           );
         },
       ),

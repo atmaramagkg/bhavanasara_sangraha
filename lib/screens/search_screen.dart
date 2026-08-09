@@ -154,7 +154,7 @@ class _SearchScreenState extends State<SearchScreen> {
           autofocus: true,
           onChanged: _onTextChanged,
           onSubmitted: (_) => _performSearch(),
-          style: TextStyle(fontFamily: 'NotoSerif', color: textColor),
+          style: TextStyle(color: textColor),
           decoration: InputDecoration(
             hintText: Translations.t('screen.search.hint'),
             hintStyle: TextStyle(color: subTextCol),
@@ -203,45 +203,48 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: _results.length,
-      separatorBuilder: (_, _) => Divider(height: 1, color: goldColor.withAlpha(60)),
-      itemBuilder: (context, index) {
-        final hit = _results[index];
-        return InkWell(
-          onTap: () => Navigator.of(context).pop(
-            SearchResult(
-              sectionId: hit.item.section.id,
-              quoteId: hit.verse?.quoteId,
-              query: _controller.text,
+    return SafeArea(
+      top: false,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        itemCount: _results.length,
+        separatorBuilder: (_, _) => Divider(height: 1, color: goldColor.withAlpha(60)),
+        itemBuilder: (context, index) {
+          final hit = _results[index];
+          return InkWell(
+            onTap: () => Navigator.of(context).pop(
+              SearchResult(
+                sectionId: hit.item.section.id,
+                quoteId: hit.verse?.quoteId,
+                query: _controller.text,
+              ),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (hit.verse != null && hit.verse!.bookTitle.isNotEmpty)
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (hit.verse != null && hit.verse!.bookTitle.isNotEmpty)
+                    Text(
+                      [hit.verse!.bookTitle, hit.verse!.refDisplay]
+                          .where((s) => s.isNotEmpty)
+                          .join(' '),
+                      style: TextStyle(fontSize: 11, color: goldColor, fontStyle: FontStyle.italic),
+                    ),
+                  if (hit.verse != null && hit.verse!.bookTitle.isNotEmpty)
+                    const SizedBox(height: 3),
                   Text(
-                    [hit.verse!.bookTitle, hit.verse!.refDisplay]
-                        .where((s) => s.isNotEmpty)
-                        .join(' '),
-                    style: TextStyle(fontSize: 11, color: goldColor, fontStyle: FontStyle.italic),
+                    hit.item.section.title,
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: textColor),
                   ),
-                if (hit.verse != null && hit.verse!.bookTitle.isNotEmpty)
-                  const SizedBox(height: 3),
-                Text(
-                  hit.item.section.title,
-                  style: TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.w600, fontSize: 15, color: textColor),
-                ),
-                const SizedBox(height: 4),
-                _buildSnippet(hit, subTextCol, goldColor),
-              ],
+                  const SizedBox(height: 4),
+                  _buildSnippet(hit, subTextCol, goldColor),
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -264,7 +267,7 @@ class _SearchScreenState extends State<SearchScreen> {
         preview,
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(fontSize: 13, color: subTextCol, fontFamily: 'NotoSerif'),
+        style: TextStyle(fontSize: 13, color: subTextCol),
       );
     }
 
@@ -289,7 +292,7 @@ class _SearchScreenState extends State<SearchScreen> {
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
       text: TextSpan(
-        style: TextStyle(fontSize: 13, color: subTextCol, fontFamily: 'NotoSerif'),
+        style: TextStyle(fontSize: 13, color: subTextCol),
         children: [
           if (start > 0) const TextSpan(text: '… '),
           TextSpan(text: before),

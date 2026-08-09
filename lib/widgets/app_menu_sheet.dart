@@ -54,7 +54,6 @@ class AppMenuSheet extends StatelessWidget {
                     style: TextStyle(color: textColor.withAlpha(180)),
                   ),
                   onTap: () {
-                    Navigator.of(context).pop();
                     showDialog(
                       context: context,
                       builder: (_) => const _LanguageDialog(),
@@ -70,7 +69,6 @@ class AppMenuSheet extends StatelessWidget {
                 style: TextStyle(color: textColor),
               ),
               onTap: () {
-                Navigator.of(context).pop();
                 showDialog(
                   context: context,
                   builder: (_) => const _ThemeDialog(),
@@ -84,7 +82,6 @@ class AppMenuSheet extends StatelessWidget {
                 style: TextStyle(color: textColor),
               ),
               onTap: () {
-                Navigator.of(context).pop();
                 showDialog(
                   context: context,
                   builder: (_) => const _FontSizeDialog(),
@@ -224,44 +221,90 @@ class _FontSizeDialog extends StatelessWidget {
     return ValueListenableBuilder<double>(
       valueListenable: AppSettings.fontScale,
       builder: (context, scale, _) {
-        return AlertDialog(
-          title: Text(Translations.t('menu.textSize')),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                Translations.t('sample.readingText'),
-                style: TextStyle(fontFamily: 'NotoSerif', fontSize: 15 * scale),
-              ),
-              const SizedBox(height: 16),
-              Row(
+        return ValueListenableBuilder<String>(
+          valueListenable: AppSettings.fontFamily,
+          builder: (context, fontFamily, _) {
+            return AlertDialog(
+              title: Text(Translations.t('menu.textSize')),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.text_decrease, size: 18),
-                  Expanded(
-                    child: Slider(
-                      value: scale,
-                      min: AppSettings.minFontScale,
-                      max: AppSettings.maxFontScale,
-                      divisions: 15,
-                      label: '${(scale * 100).round()}%',
-                      onChanged: (v) => AppSettings.setFontScale(v),
+                  Text(
+                    Translations.t('sample.readingText'),
+                    style: TextStyle(
+                      fontFamily: fontFamily,
+                      fontSize: 15 * scale,
                     ),
                   ),
-                  const Icon(Icons.text_increase, size: 22),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.text_decrease, size: 18),
+                      Expanded(
+                        child: Slider(
+                          value: scale,
+                          min: AppSettings.minFontScale,
+                          max: AppSettings.maxFontScale,
+                          divisions: 15,
+                          label: '${(scale * 100).round()}%',
+                          onChanged: (v) => AppSettings.setFontScale(v),
+                        ),
+                      ),
+                      const Icon(Icons.text_increase, size: 22),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      Translations.t('menu.fontFamily'),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  RadioGroup<String>(
+                    groupValue: fontFamily,
+                    onChanged: (String? value) {
+                      if (value != null) AppSettings.setFontFamily(value);
+                    },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RadioListTile<String>(
+                          dense: true,
+                          title: Text(
+                            Translations.t('font.serif'),
+                            style: TextStyle(fontFamily: AppSettings.fontSerif),
+                          ),
+                          value: AppSettings.fontSerif,
+                        ),
+                        RadioListTile<String>(
+                          dense: true,
+                          title: Text(
+                            Translations.t('font.sans'),
+                            style: TextStyle(fontFamily: AppSettings.fontSans),
+                          ),
+                          value: AppSettings.fontSans,
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => AppSettings.setFontScale(1.0),
-              child: Text(Translations.t('common.reset')),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(Translations.t('common.done')),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () => AppSettings.setFontScale(1.0),
+                  child: Text(Translations.t('common.reset')),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(Translations.t('common.done')),
+                ),
+              ],
+            );
+          },
         );
       },
     );

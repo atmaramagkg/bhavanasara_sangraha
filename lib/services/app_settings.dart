@@ -13,9 +13,14 @@ class AppSettings {
   static const _bookmarksKey = 'bss_bookmarked_section_ids';
   static const _fontScaleKey = 'bss_font_scale';
   static const _localeKey = 'bss_locale';
+  static const _fontFamilyKey = 'bss_font_family';
 
   static const double minFontScale = 0.85;
   static const double maxFontScale = 1.6;
+
+  /// The two bundled font families (see pubspec `fonts` section).
+  static const String fontSerif = 'NotoSerif';
+  static const String fontSans = 'NotoSans';
 
   static final ValueNotifier<ThemeMode> themeMode =
       ValueNotifier<ThemeMode>(ThemeMode.system);
@@ -24,6 +29,10 @@ class AppSettings {
       ValueNotifier<Set<int>>(<int>{});
 
   static final ValueNotifier<double> fontScale = ValueNotifier<double>(1.0);
+
+  /// Currently selected font family, used by the app-wide theme.
+  static final ValueNotifier<String> fontFamily =
+      ValueNotifier<String>(fontSerif);
 
   /// Currently selected UI language. Defaults to English so the app always
   /// opens in English on first launch regardless of the device locale.
@@ -58,6 +67,12 @@ class AppSettings {
       locale.value = Locale(savedLocale);
     }
 
+    final String? savedFontFamily = prefs.getString(_fontFamilyKey);
+    if (savedFontFamily != null &&
+        (savedFontFamily == fontSerif || savedFontFamily == fontSans)) {
+      fontFamily.value = savedFontFamily;
+    }
+
     _loaded = true;
   }
 
@@ -78,6 +93,12 @@ class AppSettings {
     locale.value = next;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_localeKey, next.languageCode);
+  }
+
+  static Future<void> setFontFamily(String family) async {
+    fontFamily.value = family;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_fontFamilyKey, family);
   }
 
   static bool isBookmarked(int sectionId) =>

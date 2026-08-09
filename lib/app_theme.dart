@@ -20,62 +20,66 @@ class BssColors {
 
 class BssTheme {
   // Light / Parchment ThemeData
-  static ThemeData get parchmentTheme {
+  static ThemeData parchmentTheme([String fontFamily = 'NotoSerif']) {
     return ThemeData(
       brightness: Brightness.light,
       scaffoldBackgroundColor: BssColors.parchmentBg,
       primaryColor: BssColors.goldAccent,
       cardColor: BssColors.parchmentCard,
+      fontFamily: fontFamily,
       colorScheme: const ColorScheme.light(
         primary: BssColors.goldAccent,
         surface: BssColors.parchmentCard,
         onSurface: BssColors.darkText,
       ),
-      textTheme: const TextTheme(
+      textTheme: TextTheme(
         headlineMedium: TextStyle(
           color: BssColors.darkText,
           fontWeight: FontWeight.bold,
-          fontFamily: 'NotoSerif',
+          fontFamily: fontFamily,
         ),
         bodyLarge: TextStyle(
           color: BssColors.darkText,
           fontSize: 16.0,
-          fontFamily: 'NotoSerif',
+          fontFamily: fontFamily,
         ),
         bodyMedium: TextStyle(
           color: BssColors.subText,
           fontSize: 14.0,
+          fontFamily: fontFamily,
         ),
       ),
     );
   }
 
   // Dark / Dark Oak ThemeData
-  static ThemeData get darkOakTheme {
+  static ThemeData darkOakTheme([String fontFamily = 'NotoSerif']) {
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: BssColors.darkOakBg,
       primaryColor: BssColors.darkOakGold,
       cardColor: BssColors.darkOakCard,
+      fontFamily: fontFamily,
       colorScheme: const ColorScheme.dark(
         primary: BssColors.darkOakGold,
         surface: BssColors.darkOakCard,
         onSurface: BssColors.darkOakText,
       ),
-      textTheme: const TextTheme(
+      textTheme: TextTheme(
         headlineMedium: TextStyle(
           color: BssColors.darkOakText,
           fontWeight: FontWeight.bold,
-          fontFamily: 'NotoSerif',
+          fontFamily: fontFamily,
         ),
         bodyLarge: TextStyle(
           color: BssColors.darkOakText,
           fontSize: 16.0,
-          fontFamily: 'NotoSerif',
+          fontFamily: fontFamily,
         ),
         bodyMedium: TextStyle(
           color: BssColors.darkOakSubText,
           fontSize: 14.0,
+          fontFamily: fontFamily,
         ),
       ),
     );

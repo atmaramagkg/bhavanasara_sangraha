@@ -17,23 +17,28 @@ class BhavanasaraApp extends StatelessWidget {
         return ValueListenableBuilder<Locale>(
           valueListenable: AppSettings.locale,
           builder: (context, locale, _) {
-            return MaterialApp(
-              // Title comes from the database translations table.
-              title: Translations.t('app.title'),
-              debugShowCheckedModeBanner: false,
-              theme: BssTheme.parchmentTheme,
-              darkTheme: BssTheme.darkOakTheme,
-              themeMode: mode,
-              locale: locale,
-              localizationsDelegates: const [
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              supportedLocales: const [Locale('en'), Locale('ru')],
-              // Remount on language change so every screen re-reads its
-              // content from the freshly opened database file.
-              home: HomeScreen(key: ValueKey(locale.languageCode)),
+            return ValueListenableBuilder<String>(
+              valueListenable: AppSettings.fontFamily,
+              builder: (context, fontFamily, _) {
+                return MaterialApp(
+                  // Title comes from the database translations table.
+                  title: Translations.t('app.title'),
+                  debugShowCheckedModeBanner: false,
+                  theme: BssTheme.parchmentTheme(fontFamily),
+                  darkTheme: BssTheme.darkOakTheme(fontFamily),
+                  themeMode: mode,
+                  locale: locale,
+                  localizationsDelegates: const [
+                    GlobalMaterialLocalizations.delegate,
+                    GlobalWidgetsLocalizations.delegate,
+                    GlobalCupertinoLocalizations.delegate,
+                  ],
+                  supportedLocales: const [Locale('en'), Locale('ru')],
+                  // Remount on language change so every screen re-reads its
+                  // content from the freshly opened database file.
+                  home: HomeScreen(key: ValueKey(locale.languageCode)),
+                );
+              },
             );
           },
         );

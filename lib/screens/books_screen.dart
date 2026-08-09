@@ -32,31 +32,34 @@ class BooksScreen extends StatelessWidget {
             return Center(child: Text(Translations.t('screen.books.empty')));
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            itemCount: books.length,
-            separatorBuilder: (_, _) => Divider(height: 1, color: goldColor.withAlpha(60)),
-            itemBuilder: (context, index) {
-              final Book b = books[index];
-              return ListTile(
-                title: Text(
-                  b.title,
-                  style: TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.w600, color: textColor),
-                ),
-                subtitle: b.author.isNotEmpty ? Text(b.author, style: TextStyle(color: subTextCol)) : null,
-                trailing: b.quoteCount > 0
-                    ? Text(
-                        '${b.quoteCount} ${Translations.plural('common.quote', b.quoteCount)}',
-                        style: TextStyle(fontSize: 12, color: goldColor),
-                      )
-                    : null,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => BookReaderScreen(repository: repository, book: b),
+          return SafeArea(
+            top: false,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: books.length,
+              separatorBuilder: (_, _) => Divider(height: 1, color: goldColor.withAlpha(60)),
+              itemBuilder: (context, index) {
+                final Book b = books[index];
+                return ListTile(
+                  title: Text(
+                    b.title,
+                    style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
                   ),
-                ),
-              );
-            },
+                  subtitle: b.author.isNotEmpty ? Text(b.author, style: TextStyle(color: subTextCol)) : null,
+                  trailing: b.quoteCount > 0
+                      ? Text(
+                          '${b.quoteCount} ${Translations.plural('common.quote', b.quoteCount)}',
+                          style: TextStyle(fontSize: 12, color: goldColor),
+                        )
+                      : null,
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => BookReaderScreen(repository: repository, book: b),
+                    ),
+                  ),
+                );
+              },
+            ),
           );
         },
       ),

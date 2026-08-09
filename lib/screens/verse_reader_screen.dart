@@ -104,24 +104,27 @@ class _VerseReaderScreenState extends State<VerseReaderScreen> {
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    ElevatedButton(
-                      onPressed: prevId == null
-                          ? null
-                          : () => setState(() => _verseId = prevId),
-                      child: const Text('Previous'),
-                    ),
-                    ElevatedButton(
-                      onPressed: nextId == null
-                          ? null
-                          : () => setState(() => _verseId = nextId),
-                      child: const Text('Next'),
-                    ),
-                  ],
+              SafeArea(
+                top: false,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                        onPressed: prevId == null
+                            ? null
+                            : () => setState(() => _verseId = prevId),
+                        child: const Text('Previous'),
+                      ),
+                      ElevatedButton(
+                        onPressed: nextId == null
+                            ? null
+                            : () => setState(() => _verseId = nextId),
+                        child: const Text('Next'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

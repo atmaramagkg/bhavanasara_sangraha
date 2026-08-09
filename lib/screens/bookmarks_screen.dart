@@ -55,7 +55,7 @@ class BookmarksScreen extends StatelessWidget {
                     leading: Icon(Icons.bookmark, color: goldColor),
                     title: Text(
                       item.section.title,
-                      style: TextStyle(fontFamily: 'NotoSerif', fontWeight: FontWeight.w600, color: textColor),
+                      style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
                     ),
                     subtitle: Text(
                       '${item.mainPeriod.title} · ${item.subPeriod.timeRange}',

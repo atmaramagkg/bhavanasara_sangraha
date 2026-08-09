@@ -7,10 +7,10 @@ import '../services/app_settings.dart';
 import '../services/bss_repository.dart';
 import '../services/translations.dart';
 import '../widgets/app_menu_sheet.dart';
-import '../widgets/period_info_sheet.dart';
 import '../utils/text_utils.dart';
 import 'bookmarks_screen.dart';
 import 'books_screen.dart';
+import 'period_screen.dart';
 import 'search_screen.dart';
 import 'verse_detail_screen.dart';
 
@@ -276,7 +276,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
   /// Renders a quote's text, highlighting the search match if this is the
   /// quote the user just navigated here from search to look at.
   Widget _buildQuoteText(VerseDetail verse, Color textColor, Color goldColor) {
-    final baseStyle = TextStyle(fontFamily: 'NotoSerif', fontSize: 13, color: textColor);
+    final baseStyle = TextStyle(fontSize: 13, color: textColor);
 
     if (_highlightedQuoteId == null ||
         verse.quoteId != _highlightedQuoteId ||
@@ -335,19 +335,16 @@ class _ReadingScreenState extends State<ReadingScreen> {
     }
     if (!mounted) return;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => PeriodInfoSheet(
-        periods: _mainPeriods,
-        currentPeriodId: liveCurrentId ?? _selectedMainPeriodId,
-        onPeriodSelected: _onMainPeriodTabSelected,
-        currentSubPeriodTitle: currentSubPeriodTitle,
-        currentSubPeriodTimeRange: currentSubPeriodTimeRange,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PeriodScreen(
+          repository: widget.repository,
+          periods: _mainPeriods,
+          currentPeriodId: liveCurrentId ?? _selectedMainPeriodId,
+          onPeriodSelected: _onMainPeriodTabSelected,
+          currentSubPeriodTitle: currentSubPeriodTitle,
+          currentSubPeriodTimeRange: currentSubPeriodTimeRange,
+        ),
       ),
     );
   }
@@ -417,13 +414,23 @@ class _ReadingScreenState extends State<ReadingScreen> {
   void _openAppMenu() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      // Transparent so the theme-reactive Material below repaints when the
+      // theme changes (a fixed backgroundColor captured here would stay light
+      // even after switching to dark oak).
+      backgroundColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => AppMenuSheet(
-        onOpenBookmarks: _openBookmarksScreen,
-        onShare: _shareCurrentSection,
+      builder: (sheetContext) => Material(
+        color: Theme.of(sheetContext).scaffoldBackgroundColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: AppMenuSheet(
+          onOpenBookmarks: _openBookmarksScreen,
+          onShare: _shareCurrentSection,
+        ),
       ),
     );
   }
@@ -687,7 +694,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                             if (item.isFirstInMainPeriod) ...[
                               Text(
                                 '${item.mainPeriod.id} ${item.mainPeriod.title}',
-                                style: TextStyle(fontFamily: 'NotoSerif', fontSize: 16, fontWeight: FontWeight.bold, color: goldColor),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: goldColor),
                               ),
                               const SizedBox(height: 4),
                             ],
@@ -696,13 +703,13 @@ class _ReadingScreenState extends State<ReadingScreen> {
                                 item.subPeriod.timeRange.isNotEmpty
                                     ? '${item.subPeriod.title} · ${item.subPeriod.timeRange}'
                                     : item.subPeriod.title,
-                                style: TextStyle(fontFamily: 'NotoSerif', fontSize: 13, fontWeight: FontWeight.w600, color: textColor),
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textColor),
                               ),
                               const SizedBox(height: 6),
                             ],
                             Text(
                               item.section.title,
-                              style: TextStyle(fontFamily: 'NotoSerif', fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
                             ),
                             const SizedBox(height: 8),
                             ...item.verses.map((verse) => Padding(
@@ -728,7 +735,6 @@ class _ReadingScreenState extends State<ReadingScreen> {
                                         child: Text(
                                           verse.refDisplay.isNotEmpty ? verse.refDisplay : verse.bookTitle,
                                           style: TextStyle(
-                                            fontFamily: 'NotoSerif',
                                             fontSize: 11,
                                             fontStyle: FontStyle.italic,
                                             color: goldColor,
