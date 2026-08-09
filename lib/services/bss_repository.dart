@@ -81,11 +81,12 @@ class BssRepository {
         p.name_key,
         p.time_start,
         p.time_end,
-        COALESCE(t.translated_text, p.code) AS title
+        COALESCE(
+          (SELECT translated_text FROM translations WHERE translation_key = p.name_key AND language_id = ?),
+          (SELECT translated_text FROM translations WHERE translation_key = p.name_key AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          p.code
+        ) AS title
       FROM period_nodes p
-      LEFT JOIN translations t 
-        ON p.name_key = t.translation_key 
-       AND t.language_id = ?
       WHERE p.period_type = 'main'
       ORDER BY p.sort_order ASC;
     ''';
@@ -115,11 +116,12 @@ class BssRepository {
         p.code,
         p.time_start,
         p.time_end,
-        COALESCE(t.translated_text, p.code) AS title
+        COALESCE(
+          (SELECT translated_text FROM translations WHERE translation_key = p.name_key AND language_id = ?),
+          (SELECT translated_text FROM translations WHERE translation_key = p.name_key AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          p.code
+        ) AS title
       FROM period_nodes p
-      LEFT JOIN translations t 
-        ON p.name_key = t.translation_key 
-       AND t.language_id = ?
       WHERE p.parent_id = ? AND p.period_type = 'sub'
       ORDER BY p.sort_order ASC;
     ''';
@@ -150,11 +152,12 @@ class BssRepository {
         d.sort_order,
         d.time_start,
         d.time_end,
-        COALESCE(t.translated_text, d.description_key) AS description
+        COALESCE(
+          (SELECT translated_text FROM translations WHERE translation_key = d.description_key AND language_id = ?),
+          (SELECT translated_text FROM translations WHERE translation_key = d.description_key AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          d.description_key
+        ) AS description
       FROM dandas d
-      LEFT JOIN translations t
-        ON d.description_key = t.translation_key
-       AND t.language_id = ?
       ORDER BY d.sort_order ASC;
     ''';
 
@@ -197,11 +200,12 @@ class BssRepository {
         s.id,
         s.period_node_id,
         s.sort_order,
-        COALESCE(t.translated_text, s.title_key) AS title
+        COALESCE(
+          (SELECT translated_text FROM translations WHERE translation_key = s.title_key AND language_id = ?),
+          (SELECT translated_text FROM translations WHERE translation_key = s.title_key AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          s.title_key
+        ) AS title
       FROM sections s
-      LEFT JOIN translations t 
-        ON s.title_key = t.translation_key 
-       AND t.language_id = ?
       WHERE s.period_node_id = ?
       ORDER BY s.sort_order ASC;
     ''';
@@ -362,14 +366,18 @@ class BssRepository {
       SELECT
         b.id,
         b.slug,
-        COALESCE(tt.translated_text, b.slug) AS title,
-        COALESCE(ta.translated_text, '') AS author,
+        COALESCE(
+          (SELECT translated_text FROM translations WHERE translation_key = b.title_key AND language_id = ?),
+          (SELECT translated_text FROM translations WHERE translation_key = b.title_key AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          b.slug
+        ) AS title,
+        COALESCE(
+          (SELECT translated_text FROM translations WHERE translation_key = b.author_key AND language_id = ?),
+          (SELECT translated_text FROM translations WHERE translation_key = b.author_key AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          ''
+        ) AS author,
         (SELECT COUNT(*) FROM citations c WHERE c.source_book_id = b.id) AS quote_count
       FROM books b
-      LEFT JOIN translations tt
-        ON tt.translation_key = b.title_key AND tt.language_id = ?
-      LEFT JOIN translations ta
-        ON ta.translation_key = b.author_key AND ta.language_id = ?
       ORDER BY title ASC;
     ''';
 
@@ -395,13 +403,17 @@ class BssRepository {
       SELECT
         b.id,
         b.slug,
-        COALESCE(tt.translated_text, b.slug) AS title,
-        COALESCE(ta.translated_text, '') AS author
+        COALESCE(
+          (SELECT translated_text FROM translations WHERE translation_key = b.title_key AND language_id = ?),
+          (SELECT translated_text FROM translations WHERE translation_key = b.title_key AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          b.slug
+        ) AS title,
+        COALESCE(
+          (SELECT translated_text FROM translations WHERE translation_key = b.author_key AND language_id = ?),
+          (SELECT translated_text FROM translations WHERE translation_key = b.author_key AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          ''
+        ) AS author
       FROM books b
-      LEFT JOIN translations tt
-        ON tt.translation_key = b.title_key AND tt.language_id = ?
-      LEFT JOIN translations ta
-        ON ta.translation_key = b.author_key AND ta.language_id = ?
       WHERE b.id = ?
       LIMIT 1;
     ''';

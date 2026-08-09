@@ -14,6 +14,7 @@ class AppSettings {
   static const _fontScaleKey = 'bss_font_scale';
   static const _localeKey = 'bss_locale';
   static const _fontFamilyKey = 'bss_font_family';
+  static const _lastReadSectionKey = 'bss_last_read_section_id';
 
   static const double minFontScale = 0.85;
   static const double maxFontScale = 1.6;
@@ -39,6 +40,12 @@ class AppSettings {
   static final ValueNotifier<Locale> locale = ValueNotifier<Locale>(
     const Locale('en'),
   );
+
+  /// The section the user was last reading, so the app can resume there --
+  /// both on a normal relaunch and immediately after a language switch,
+  /// which needs to reopen the reading screen from scratch against the
+  /// newly-selected language's database.
+  static final ValueNotifier<int?> lastReadSectionId = ValueNotifier<int?>(null);
 
   static bool _loaded = false;
 
@@ -73,6 +80,8 @@ class AppSettings {
       fontFamily.value = savedFontFamily;
     }
 
+    lastReadSectionId.value = prefs.getInt(_lastReadSectionKey);
+
     _loaded = true;
   }
 
@@ -99,6 +108,15 @@ class AppSettings {
     fontFamily.value = family;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_fontFamilyKey, family);
+  }
+
+  /// Cheap, fire-and-forget: called on every real section change (not on
+  /// every scroll tick) so relaunching, or switching language, resumes
+  /// close to where the user actually was.
+  static Future<void> setLastReadSection(int sectionId) async {
+    lastReadSectionId.value = sectionId;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_lastReadSectionKey, sectionId);
   }
 
   static bool isBookmarked(int sectionId) =>

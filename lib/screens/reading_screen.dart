@@ -18,12 +18,14 @@ class ReadingScreen extends StatefulWidget {
   final BssRepository repository;
   final int initialPeriodId;
   final int? initialSubPeriodId;
+  final int? initialSectionId;
 
   const ReadingScreen({
     super.key,
     required this.repository,
     this.initialPeriodId = 1,
     this.initialSubPeriodId,
+    this.initialSectionId,
   });
 
   @override
@@ -81,16 +83,23 @@ class _ReadingScreenState extends State<ReadingScreen> {
 
       int initialIndex = 0;
       if (feedItems.isNotEmpty) {
-        // Land on the exact sub period the clock says it is right now, not
-        // just the start of its main period (e.g. nishanta_2 instead of
-        // nishanta_1). Falls back to the main period if the sub period has
-        // no sections in the feed.
-        final int? targetSubPeriodId = widget.initialSubPeriodId;
-        initialIndex = targetSubPeriodId != null
-            ? feedItems.indexWhere(
-                (item) => item.subPeriod.id == targetSubPeriodId,
-              )
+        // Priority: an exact resumed section (deep link or language switch)
+        // > the precise sub period the clock says it is right now (e.g.
+        // nishanta_2 instead of nishanta_1) > just the main period > the
+        // very first item, in that order.
+        final int? targetSectionId = widget.initialSectionId;
+        initialIndex = targetSectionId != null
+            ? feedItems.indexWhere((item) => item.section.id == targetSectionId)
             : -1;
+
+        if (initialIndex == -1) {
+          final int? targetSubPeriodId = widget.initialSubPeriodId;
+          initialIndex = targetSubPeriodId != null
+              ? feedItems.indexWhere(
+                  (item) => item.subPeriod.id == targetSubPeriodId,
+                )
+              : -1;
+        }
         if (initialIndex == -1) {
           initialIndex = feedItems.indexWhere(
             (item) => item.mainPeriod.id == _selectedMainPeriodId,
@@ -165,6 +174,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
         _currentSubPeriods = subPeriods;
       }
     });
+    AppSettings.setLastReadSection(secId);
   }
 
   /// Scrolls the feed so the given section's title lands near the top.
@@ -214,6 +224,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
     });
 
     _scrollToSection(targetItem.section.id);
+    AppSettings.setLastReadSection(targetItem.section.id);
   }
 
   Future<void> _onSubPeriodSelected(int subPeriodId) async {
@@ -232,6 +243,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
     });
 
     _scrollToSection(targetItem.section.id);
+    AppSettings.setLastReadSection(targetItem.section.id);
   }
 
   void _onSectionRailSelected(int sectionId) {
@@ -241,6 +253,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
       _highlightQuery = null;
     });
     _scrollToSection(sectionId);
+    AppSettings.setLastReadSection(sectionId);
   }
 
   /// Jumps to an arbitrary section that might belong to a *different* main
@@ -271,6 +284,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
     });
 
     await _scrollToSection(sectionId);
+    AppSettings.setLastReadSection(sectionId);
   }
 
   /// Renders a quote's text, highlighting the search match if this is the
