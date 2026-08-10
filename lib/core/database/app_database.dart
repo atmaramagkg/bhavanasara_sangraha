@@ -30,12 +30,22 @@ class AppDatabase {
       'assets/db/Bhavanasara-Sangraha_En.sqlite';
   static const String _ruAssetPath =
       'assets/db/Bhavanasara-Sangraha_Ru.sqlite';
+  static const String _hiAssetPath =
+      'assets/db/Bhavanasara-Sangraha_Hi.sqlite';
 
   static final RegExp _assetNamePattern =
       RegExp(r'assets/db/Bhavanasara-Sangraha_(\w+)\.sqlite$');
 
-  static String get _assetPath =>
-      _languageCode == 'ru' ? _ruAssetPath : _enAssetPath;
+  static String get _assetPath {
+    switch (_languageCode) {
+      case 'ru':
+        return _ruAssetPath;
+      case 'hi':
+        return _hiAssetPath;
+      default:
+        return _enAssetPath;
+    }
+  }
 
   static String get _dbFileName => 'bhavanasara_$_languageCode.db';
 
@@ -138,11 +148,11 @@ class AppDatabase {
     await _ensureLanguage(_languageCode);
   }
 
-  /// Switches the app to the database file for [code] ('en' or 'ru').
+  /// Switches the app to the database file for [code] ('en', 'ru' or 'hi').
   /// Closes the current database, opens the matching one and makes sure its
   /// `languages`/`app_settings` rows describe [code].
   Future<void> switchDatabase(String code) async {
-    final String next = code == 'ru' ? 'ru' : 'en';
+    final String next = (code == 'ru' || code == 'hi') ? code : 'en';
     if (next == _languageCode && _db != null) return;
 
     await _db?.close();
@@ -172,7 +182,11 @@ class AppDatabase {
       await db.insert('languages', {
         'id': nextId,
         'code': code,
-        'name': code == 'ru' ? 'Русский' : 'English',
+        'name': switch (code) {
+          'ru' => 'Русский',
+          'hi' => 'हिन्दी',
+          _ => 'English',
+        },
         'is_default': 0,
       });
     }

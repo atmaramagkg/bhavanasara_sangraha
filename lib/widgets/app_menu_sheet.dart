@@ -48,9 +48,11 @@ class AppMenuSheet extends StatelessWidget {
                     style: TextStyle(color: textColor),
                   ),
                   subtitle: Text(
-                    locale.languageCode == 'ru'
-                        ? Translations.t('language.russian')
-                        : Translations.t('language.english'),
+                    switch (locale.languageCode) {
+                      'ru' => Translations.t('language.russian'),
+                      'hi' => Translations.t('language.hindi'),
+                      _ => Translations.t('language.english'),
+                    },
                     style: TextStyle(color: textColor.withAlpha(180)),
                   ),
                   onTap: () {

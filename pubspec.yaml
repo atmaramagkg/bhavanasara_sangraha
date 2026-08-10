@@ -1,7 +1,7 @@
 name: lila_smarana
 description: "Quotes form 30 scriptures related to Asta-kaliya Lila."
 publish_to: 'none' 
-version: 0.53.0+1
+version: 0.55.0+1
 
 environment:
   sdk: ^3.12.2

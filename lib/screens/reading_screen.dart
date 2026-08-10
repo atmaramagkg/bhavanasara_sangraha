@@ -509,7 +509,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
           children: [
             IconButton(
               icon: const Icon(Icons.access_time),
-              tooltip: 'Time periods',
+              tooltip: Translations.t('common.periods'),
               onPressed: _mainPeriods.isEmpty ? null : _openPeriodInfoSheet,
               color: goldColor,
               disabledColor: goldColor.withAlpha(140),

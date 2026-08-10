@@ -37,6 +37,9 @@ class Translations {
       }
       return 'many';
     }
+    if (code == 'hi') {
+      return (count == 0 || count == 1) ? 'one' : 'other';
+    }
     return count == 1 ? 'one' : 'other';
   }
 

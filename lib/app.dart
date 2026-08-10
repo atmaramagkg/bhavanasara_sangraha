@@ -33,7 +33,11 @@ class LilaSmaranaApp extends StatelessWidget {
                     GlobalWidgetsLocalizations.delegate,
                     GlobalCupertinoLocalizations.delegate,
                   ],
-                  supportedLocales: const [Locale('en'), Locale('ru')],
+                  supportedLocales: const [
+                    Locale('en'),
+                    Locale('ru'),
+                    Locale('hi'),
+                  ],
                   // Remount on language change so every screen re-reads its
                   // content from the freshly opened database file.
                   home: HomeScreen(key: ValueKey(locale.languageCode)),
