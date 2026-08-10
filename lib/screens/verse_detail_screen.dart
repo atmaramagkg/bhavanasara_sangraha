@@ -191,7 +191,11 @@ class _VersePage extends StatelessWidget {
         if (verse.originalText.isNotEmpty) ...[
           Text(
             verse.originalText,
-            style: const TextStyle(fontSize: 17, height: 1.4),
+            style: const TextStyle(
+              fontSize: 17,
+              height: 1.4,
+              fontStyle: FontStyle.italic,
+            ),
           ),
           const SizedBox(height: 12),
         ],

@@ -478,7 +478,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
       }
       buffer.writeln();
     }
-    buffer.write('Bhāvanāsāra Saṅgraha');
+    buffer.write('Lila Smarana');
 
     SharePlus.instance.share(ShareParams(text: buffer.toString()));
   }

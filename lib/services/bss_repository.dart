@@ -253,39 +253,159 @@ class BssRepository {
     }).toList();
   }
 
+  /// Builds the entire continuous reading feed (every main period -> every
+  /// sub period -> every section -> every quote in it) in a single round
+  /// trip to the database.
+  ///
+  /// This used to be a triple-nested loop that issued one query per main
+  /// period, one per sub period, one per section, and one per section's
+  /// quotes -- roughly 1 + 8 + ~24 + 129 ~= 160+ sequential awaited queries
+  /// for the full 129-section feed. That's now a single JOIN query, with
+  /// the nested period/section/quote structure rebuilt by grouping the flat
+  /// result rows in Dart (they arrive pre-sorted, so grouping is a single
+  /// linear pass, not a search).
   Future<List<ContinuousReadingItem>> loadFullContinuousFeed({int languageId = 1}) async {
-    final List<LilaPeriod> mainPeriods = await getMainPeriods(languageId: languageId);
+    const query = '''
+      SELECT
+        pm.id AS main_id, pm.code AS main_code, pm.name_key AS main_name_key,
+        pm.time_start AS main_time_start, pm.time_end AS main_time_end,
+        COALESCE(tm.translated_text, tm_en.translated_text, pm.code) AS main_title,
+
+        ps.id AS sub_id, ps.parent_id AS sub_parent_id, ps.code AS sub_code,
+        ps.time_start AS sub_time_start, ps.time_end AS sub_time_end,
+        COALESCE(tsub.translated_text, tsub_en.translated_text, ps.code) AS sub_title,
+
+        sec.id AS section_id, sec.period_node_id AS section_period_node_id,
+        sec.sort_order AS section_sort_order,
+        COALESCE(tsec.translated_text, tsec_en.translated_text, sec.title_key) AS section_title,
+
+        q.id AS quote_id, COALESCE(q.quote_text, '') AS quote_text,
+        COALESCE(c.ref_display, '') AS ref_display, c.source_verse_id AS verse_id,
+        COALESCE(tb.translated_text, b.slug, '') AS book_title
+
+      FROM period_nodes pm
+      JOIN period_nodes ps ON ps.parent_id = pm.id AND ps.period_type = 'sub'
+      JOIN sections sec ON sec.period_node_id = ps.id
+      LEFT JOIN quotes q ON q.section_id = sec.id
+      LEFT JOIN citations c ON c.quote_id = q.id
+      LEFT JOIN books b ON b.id = c.source_book_id
+      LEFT JOIN translations tm
+        ON tm.translation_key = pm.name_key AND tm.language_id = ?
+      LEFT JOIN translations tm_en
+        ON tm_en.translation_key = pm.name_key
+       AND tm_en.language_id = (SELECT id FROM languages WHERE code = 'en')
+      LEFT JOIN translations tsub
+        ON tsub.translation_key = ps.name_key AND tsub.language_id = ?
+      LEFT JOIN translations tsub_en
+        ON tsub_en.translation_key = ps.name_key
+       AND tsub_en.language_id = (SELECT id FROM languages WHERE code = 'en')
+      LEFT JOIN translations tsec
+        ON tsec.translation_key = sec.title_key AND tsec.language_id = ?
+      LEFT JOIN translations tsec_en
+        ON tsec_en.translation_key = sec.title_key
+       AND tsec_en.language_id = (SELECT id FROM languages WHERE code = 'en')
+      LEFT JOIN translations tb
+        ON tb.translation_key = b.title_key AND tb.language_id = ?
+
+      WHERE pm.period_type = 'main'
+      ORDER BY pm.sort_order ASC, ps.sort_order ASC, sec.sort_order ASC, q.sort_order ASC;
+    ''';
+
+    final List<Map<String, dynamic>> rows = await db.rawQuery(
+      query,
+      [languageId, languageId, languageId, languageId],
+    );
+
     final List<ContinuousReadingItem> items = [];
 
     int previousMainId = -1;
     int previousSubId = -1;
 
-    for (final main in mainPeriods) {
-      final List<SubPeriod> subPeriods = await getSubPeriods(main.id, languageId: languageId);
+    LilaPeriod? currentMain;
+    SubPeriod? currentSub;
+    LilaSectionItem? currentSection;
+    List<VerseDetail> currentVerses = [];
+    int currentSectionId = -1;
 
-      for (final sub in subPeriods) {
-        final List<LilaSectionItem> sections = await getSectionsForPeriod(sub.id, languageId: languageId);
+    // Pushes the section being accumulated (main+sub+section+its verses)
+    // onto `items` as one ContinuousReadingItem, then updates the
+    // "previous" trackers used to compute isFirst*Period for the next one.
+    void flushCurrentSection() {
+      if (currentSection == null || currentMain == null || currentSub == null) {
+        return;
+      }
 
-        for (final sec in sections) {
-          final List<VerseDetail> verses = await getVersesForSection(sec.id, languageId: languageId);
+      items.add(ContinuousReadingItem(
+        mainPeriod: currentMain,
+        subPeriod: currentSub,
+        section: currentSection,
+        verses: List<VerseDetail>.from(currentVerses),
+        isFirstInSubPeriod: currentSub.id != previousSubId,
+        isFirstInMainPeriod: currentMain.id != previousMainId,
+      ));
 
-          final bool isFirstInMain = (main.id != previousMainId);
-          final bool isFirstInSub = (sub.id != previousSubId);
+      previousMainId = currentMain.id;
+      previousSubId = currentSub.id;
+    }
 
-          items.add(ContinuousReadingItem(
-            mainPeriod: main,
-            subPeriod: sub,
-            section: sec,
-            verses: verses,
-            isFirstInSubPeriod: isFirstInSub,
-            isFirstInMainPeriod: isFirstInMain,
-          ));
+    for (final row in rows) {
+      final int sectionId = (row['section_id'] as int?) ?? 0;
 
-          previousMainId = main.id;
-          previousSubId = sub.id;
-        }
+      if (sectionId != currentSectionId) {
+        // Rows are pre-sorted by section, so a change in section id means
+        // the previous section's group is complete.
+        flushCurrentSection();
+
+        final String mainStart = (row['main_time_start'] as String?) ?? '';
+        final String mainEnd = (row['main_time_end'] as String?) ?? '';
+        currentMain = LilaPeriod(
+          id: (row['main_id'] as int?) ?? 1,
+          code: (row['main_code'] as String?) ?? '',
+          nameKey: (row['main_name_key'] as String?) ?? '',
+          title: (row['main_title'] as String?) ?? '',
+          timeRange: (mainStart.isNotEmpty && mainEnd.isNotEmpty)
+              ? '$mainStart - $mainEnd'
+              : '',
+        );
+
+        final String subStart = (row['sub_time_start'] as String?) ?? '';
+        final String subEnd = (row['sub_time_end'] as String?) ?? '';
+        currentSub = SubPeriod(
+          id: (row['sub_id'] as int?) ?? 0,
+          parentId: (row['sub_parent_id'] as int?) ?? 0,
+          code: (row['sub_code'] as String?) ?? '',
+          title: (row['sub_title'] as String?) ?? '',
+          timeRange: (subStart.isNotEmpty && subEnd.isNotEmpty)
+              ? '$subStart - $subEnd'
+              : '',
+        );
+
+        currentSection = LilaSectionItem(
+          id: sectionId,
+          periodNodeId: (row['section_period_node_id'] as int?) ?? 0,
+          sortOrder: (row['section_sort_order'] as int?) ?? 0,
+          title: (row['section_title'] as String?) ?? '',
+        );
+
+        currentVerses = [];
+        currentSectionId = sectionId;
+      }
+
+      // Sections with zero quotes still produce one row (LEFT JOIN quotes),
+      // with quote_id NULL -- skip adding a verse for those.
+      final int? quoteId = row['quote_id'] as int?;
+      if (quoteId != null) {
+        currentVerses.add(VerseDetail(
+          quoteId: quoteId,
+          quoteText: (row['quote_text'] as String?) ?? '',
+          refDisplay: (row['ref_display'] as String?) ?? '',
+          bookTitle: (row['book_title'] as String?) ?? '',
+          verseId: (row['verse_id'] as int?) ?? 0,
+        ));
       }
     }
+
+    flushCurrentSection(); // the final group is never flushed inside the loop
 
     return items;
   }
@@ -378,6 +498,7 @@ class BssRepository {
         ) AS author,
         (SELECT COUNT(*) FROM citations c WHERE c.source_book_id = b.id) AS quote_count
       FROM books b
+      WHERE (SELECT COUNT(*) FROM citations c WHERE c.source_book_id = b.id) > 0
       ORDER BY title ASC;
     ''';
 

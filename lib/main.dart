@@ -17,6 +17,6 @@ Future<void> main() async {
   await Translations.load();
 
   runApp(
-    const BhavanasaraApp(),
+    const LilaSmaranaApp(),
   );
 }

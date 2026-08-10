@@ -1,0 +1,94 @@
+missing-verses audit (final)
+============================
+Source data: assets/db/Bhavanasara-Sangraha_En.sqlite
+Candidates:  C:\Users\austr\AppData\Local\Temp\opencode\missing_verses.json
+            (68 units parsed from the source compilation that failed the
+            (book, chapter, verse) lookup)
+
+SUMMARY
+-------
+  DUPLICATE (content already in DB under a different ref/numbering): 64
+  MISSING verse row (content only in a quote, citation mis-mapped):     1  (unit 276)
+  GENUINELY MISSING (no verse row and no quote in DB):                 3  (units 2, 4, 73)
+  ------------------------------------------------------------------------
+  total                                                                68
+
+ROOT CAUSE
+----------
+Almost all 68 candidates are NOT missing verses. They were falsely flagged
+because the ref-parser in compare_missing.py compared chapter + verse numbers
+against DB ref strings, and the DB's ref strings are often malformed ranges:
+
+  DB ref      actually means           candidate verses falsely flagged
+  ---------   ----------------------   ------------------------------------
+  2.8-1       govinda-lilamrta 2.8-11  units 82-84 (2.9, 2.10, 2.11)
+  3.84-12     govinda-lilamrta 3.84-112 units 349-375 (3.85-3.112, cooking)
+  1.17-222    ananda-vrndavana-campu 1.17-222
+                                       units 45-50 (11.217-11.222)
+  4.109-10    krsna-bhavanamrta 4.109-110
+                                       unit 233 (4.110)
+  1.17-21     krsnahnika-kaumudi (actually covers 1.17-23)
+                                       units 98-99 (1.22, 1.23)
+
+The parser also swapped out-of-order range endpoints, so overlapping verses
+never matched. Additionally, the DB was built from a DIFFERENT English
+translation and uses DIFFERENT verse numbering than the source Eng.txt, so
+token-level (semantic) matching was required rather than verbatim text:
+
+  candidate ref        DB verse (same content, different ref)
+  -----------------    ------------------------------------------
+  govinda-lilamrta 1.41        v12 (1.31-32)  parrot Daksa
+  govinda-lilamrta 1.112       v60 (1.12)
+  govinda-lilamrta 1.113/1.114 v62 (1.13-14)
+  govinda-lilamrta 1.116       v66 (1.16)
+  govinda-lilamrta 2.25        v96 (2.26)
+  govinda-lilamrta 2.65        v109 (2.59-60)
+  campu 11.88 / 11.90          v106 (1.88) / v107 (1.90)   (11.x == 1.x)
+  campu 11.224 / 11.226        v74 (1.224) / v75 (1.226)
+  alankara 5.236               v24 (5.19)
+  alankara 5.237-238           v25 (5.120-121)  (unit 55 = part 1, unit 56 = part 2)
+  ujjvala Uddipana 20          v76 (10.20)
+  ujjvala Sthayibhava 148      v77 (14.148)
+  krsna-bhavanamrta 3.51-52    v101 (3.53-58)
+  krsna-bhavanamrta 4.110      v139 (4.109-110)
+  krsna-bhavanamrta 5.25       v145 (5.27)
+  krsna-bhavanamrta 5.34       v157 (5.35-47)
+  krsna-bhavanamrta 5.64-65    v169 (5.57)
+  krsnahnika-kaumudi 1.11      v19 (1.10-1)
+  krsnahnika-kaumudi 1.22-23   v39 (1.17-21, extends to 1.23)
+  krsnahnika-kaumudi 2.67-68   v114 (2.69)
+  krsnahnika-kaumudi 2.77      q134/v115 (govinda-lilamrta 2.77, fragment)
+  vraja-riti-cintamani 2.19-22 v160 (1.19-22)  (4 verses in one range)
+
+GENUINELY MISSING VERSES (need to be added to the verses table)
+---------------------------------------------------------------
+unit  2: caitanya-candramrta 13
+   "Sri Gauracandra has strong shoulders like a lion..." (closing verse of
+   the Nisanta-lila opening; source ref "(Caitanya-candramrtam 13)"). The
+   caitanya-candramrta book has 0 verses in the DB and no matching quote.
+
+unit  4: bhakti-rasamrta-sindhu 1.1.4
+   "I offer my humble obeisance unto the devotees of Sri Gauracandra, who are
+   like dolphins sporting in the ocean of bhakti-rasa..." The BRS book in the
+   DB only contains 3.2-4.3 verses; 1.1.4 is absent.
+
+unit 73: krsna-bhavanamrta 1.26
+   "After first making certain that Radha and Krsna were awake, Srimati's
+   kinkaris ... unfastened the door and with quiet, gentle steps entered the
+   cottage." Falls in the gap between v44 (1.25) and v408 (1.27-52).
+
+MISSING VERSE ROW (content exists only in a quote)
+--------------------------------------------------
+unit 276: krsna-bhavanamrta 5.28
+   "O Radha! You have come a long way from Yavata and are almost at Nanda's
+   palace..." This text appears in the DB only as quote q160, whose citation
+   points to verse v146 (ref 5.26) -- but v146's text is a different verse
+   ("Radhika avoided strangers..."). A verse row for this content is absent.
+
+NOTES
+-----
+* Several candidate translations are contaminated by interleaved footnotes,
+  headings and Sanskrit lines (e.g. units 50, 55, 73, 346-347, 363). These are
+  extraction artifacts of the unit parser, not DB problems.
+* citation_report.txt already listed the same malformed refs as
+  "suspicious_verse_numbers" (1.10-1, 2.8-1, 4.109-10, 3.84-12, ...).

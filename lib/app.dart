@@ -6,8 +6,8 @@ import 'screens/home_screen.dart';
 import 'services/app_settings.dart';
 import 'services/translations.dart';
 
-class BhavanasaraApp extends StatelessWidget {
-  const BhavanasaraApp({super.key});
+class LilaSmaranaApp extends StatelessWidget {
+  const LilaSmaranaApp({super.key});
 
   @override
   Widget build(BuildContext context) {

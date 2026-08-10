@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../core/database/app_database.dart';
-import '../services/app_settings.dart';
 import '../services/bss_repository.dart';
 import 'reading_screen.dart';
 
@@ -38,21 +37,21 @@ class HomeScreen extends StatelessWidget {
 
         final repository = BssRepository(db);
 
-        // Prefer resuming exactly where the user left off -- whether that's
-        // from a normal relaunch, or immediately after a language switch,
-        // which remounts this whole screen from scratch. Only fall back to
-        // "whatever period it is right now" when there's truly no saved
-        // position yet (first-ever launch).
-        final int? resumeSectionId = AppSettings.lastReadSectionId.value;
-        if (resumeSectionId != null) {
-          return ReadingScreen(
-            repository: repository,
-            initialSectionId: resumeSectionId,
-          );
-        }
-
-        // Open on whichever period (main + sub) the clock says it is right
-        // now, falling back to period 1 if that lookup ever fails.
+        // Always open on whichever period (main + sub) the clock says it is
+        // right now -- that's the whole point of a time-of-day devotional
+        // reader. This runs on every cold start and every language switch
+        // (which remounts this widget), so the app never opens "stale" on
+        // a period from hours or days ago.
+        //
+        // NOTE: AppSettings.lastReadSectionId is intentionally NOT used to
+        // pick the initial screen here. It used to take priority over the
+        // live time-of-day lookup, which meant that after the very first
+        // launch (once any section had ever been read), the app would keep
+        // reopening on the last-read section forever, and the current-time
+        // logic below would never run again. Deep links / explicit
+        // navigation can still jump to a specific section via
+        // ReadingScreen's initialSectionId; this entry point just no
+        // longer does so automatically on plain app open.
         return FutureBuilder<({int mainPeriodId, int subPeriodId})?>(
           future: repository.getCurrentPeriodPair(),
           builder: (context, periodSnapshot) {

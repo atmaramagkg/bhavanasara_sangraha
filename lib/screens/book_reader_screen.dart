@@ -103,13 +103,6 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      if (v.originalText.isNotEmpty) ...[
-                        Text(
-                          v.originalText,
-                          style: const TextStyle(fontSize: 15, height: 1.4),
-                        ),
-                        const SizedBox(height: 6),
-                      ],
                       if (v.translationText.isNotEmpty)
                         Text(
                           v.translationText,
