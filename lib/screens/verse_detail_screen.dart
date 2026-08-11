@@ -188,13 +188,21 @@ class _VersePage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
+        if (verse.originalTextDevanagari.isNotEmpty) ...[
+          Text(
+            verse.originalTextDevanagari,
+            style: const TextStyle(fontSize: 18, height: 1.6),
+          ),
+          const SizedBox(height: 8),
+        ],
         if (verse.originalText.isNotEmpty) ...[
           Text(
             verse.originalText,
-            style: const TextStyle(
-              fontSize: 17,
+            style: TextStyle(
+              fontSize: 15,
               height: 1.4,
               fontStyle: FontStyle.italic,
+              color: subTextCol,
             ),
           ),
           const SizedBox(height: 12),

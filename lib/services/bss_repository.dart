@@ -73,7 +73,8 @@ class BssRepository {
 
   BssRepository(this.db);
 
-  Future<List<LilaPeriod>> getMainPeriods({int languageId = 1}) async {
+  Future<List<LilaPeriod>> getMainPeriods({int? languageId}) async {
+    final int langId = languageId ?? await _currentLanguageId();
     const query = '''
       SELECT 
         p.id,
@@ -91,7 +92,7 @@ class BssRepository {
       ORDER BY p.sort_order ASC;
     ''';
 
-    final List<Map<String, dynamic>> results = await db.rawQuery(query, [languageId]);
+    final List<Map<String, dynamic>> results = await db.rawQuery(query, [langId]);
 
     return results.map<LilaPeriod>((row) {
       final start = row['time_start'] as String? ?? '';
@@ -108,7 +109,8 @@ class BssRepository {
     }).toList();
   }
 
-  Future<List<SubPeriod>> getSubPeriods(int mainPeriodId, {int languageId = 1}) async {
+  Future<List<SubPeriod>> getSubPeriods(int mainPeriodId, {int? languageId}) async {
+    final int langId = languageId ?? await _currentLanguageId();
     const query = '''
       SELECT 
         p.id,
@@ -126,7 +128,7 @@ class BssRepository {
       ORDER BY p.sort_order ASC;
     ''';
 
-    final List<Map<String, dynamic>> results = await db.rawQuery(query, [languageId, mainPeriodId]);
+    final List<Map<String, dynamic>> results = await db.rawQuery(query, [langId, mainPeriodId]);
 
     return results.map<SubPeriod>((row) {
       final start = row['time_start'] as String? ?? '';
@@ -194,7 +196,8 @@ class BssRepository {
     return 1;
   }
 
-  Future<List<LilaSectionItem>> getSectionsForPeriod(int periodNodeId, {int languageId = 1}) async {
+  Future<List<LilaSectionItem>> getSectionsForPeriod(int periodNodeId, {int? languageId}) async {
+    final int langId = languageId ?? await _currentLanguageId();
     const query = '''
       SELECT 
         s.id,
@@ -210,7 +213,7 @@ class BssRepository {
       ORDER BY s.sort_order ASC;
     ''';
 
-    final List<Map<String, dynamic>> results = await db.rawQuery(query, [languageId, periodNodeId]);
+    final List<Map<String, dynamic>> results = await db.rawQuery(query, [langId, periodNodeId]);
 
     return results.map<LilaSectionItem>((row) {
       return LilaSectionItem(
@@ -222,7 +225,8 @@ class BssRepository {
     }).toList();
   }
 
-  Future<List<VerseDetail>> getVersesForSection(int sectionId, {int languageId = 1}) async {
+  Future<List<VerseDetail>> getVersesForSection(int sectionId, {int? languageId}) async {
+    final int langId = languageId ?? await _currentLanguageId();
     const query = '''
       SELECT 
         q.id AS quote_id,
@@ -240,7 +244,7 @@ class BssRepository {
       ORDER BY q.sort_order ASC;
     ''';
 
-    final List<Map<String, dynamic>> results = await db.rawQuery(query, [languageId, sectionId]);
+    final List<Map<String, dynamic>> results = await db.rawQuery(query, [langId, sectionId]);
 
     return results.map<VerseDetail>((row) {
       return VerseDetail(
@@ -264,7 +268,8 @@ class BssRepository {
   /// the nested period/section/quote structure rebuilt by grouping the flat
   /// result rows in Dart (they arrive pre-sorted, so grouping is a single
   /// linear pass, not a search).
-  Future<List<ContinuousReadingItem>> loadFullContinuousFeed({int languageId = 1}) async {
+  Future<List<ContinuousReadingItem>> loadFullContinuousFeed({int? languageId}) async {
+    final int langId = languageId ?? await _currentLanguageId();
     const query = '''
       SELECT
         pm.id AS main_id, pm.code AS main_code, pm.name_key AS main_name_key,
@@ -313,7 +318,7 @@ class BssRepository {
 
     final List<Map<String, dynamic>> rows = await db.rawQuery(
       query,
-      [languageId, languageId, languageId, languageId],
+      [langId, langId, langId, langId],
     );
 
     final List<ContinuousReadingItem> items = [];
@@ -481,7 +486,8 @@ class BssRepository {
   }
 
   /// All source scriptures, with how many quotes cite each one.
-  Future<List<Book>> getAllBooks({int languageId = 1}) async {
+  Future<List<Book>> getAllBooks({int? languageId}) async {
+    final int langId = languageId ?? await _currentLanguageId();
     const query = '''
       SELECT
         b.id,
@@ -503,7 +509,7 @@ class BssRepository {
     ''';
 
     final List<Map<String, dynamic>> results =
-        await db.rawQuery(query, [languageId, languageId]);
+        await db.rawQuery(query, [langId, langId]);
 
     return results.map((row) {
       return Book(
@@ -519,7 +525,8 @@ class BssRepository {
   /// A single book's title (used to give the verse-detail screen book
   /// context, since verses.ref_display alone -- e.g. "10.13.1" -- doesn't
   /// say which scripture it's from).
-  Future<Book?> getBookById(int bookId, {int languageId = 1}) async {
+  Future<Book?> getBookById(int bookId, {int? languageId}) async {
+    final int langId = languageId ?? await _currentLanguageId();
     const query = '''
       SELECT
         b.id,
@@ -540,7 +547,7 @@ class BssRepository {
     ''';
 
     final List<Map<String, dynamic>> results =
-        await db.rawQuery(query, [languageId, languageId, bookId]);
+        await db.rawQuery(query, [langId, langId, bookId]);
     if (results.isEmpty) return null;
 
     final row = results.first;
@@ -617,11 +624,12 @@ class BssRepository {
   /// together with the main-period and subperiod they belong to.
   Future<List<ContinuousReadingItem>> getSectionsByIds(
     List<int> sectionIds, {
-    int languageId = 1,
+    int? languageId,
   }) async {
     if (sectionIds.isEmpty) return [];
 
-    final List<ContinuousReadingItem> allItems = await loadFullContinuousFeed(languageId: languageId);
+    final int langId = languageId ?? await _currentLanguageId();
+    final List<ContinuousReadingItem> allItems = await loadFullContinuousFeed(languageId: langId);
     final Map<int, ContinuousReadingItem> bySectionId = {
       for (final item in allItems) item.section.id: item,
     };

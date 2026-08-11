@@ -105,7 +105,12 @@ class _PeriodScreenState extends State<PeriodScreen> {
         if (diff <= 0) diff += 24 * 60;
         final h = diff ~/ 60;
         final m = diff % 60;
-        countdown = h > 0 ? '${h}h ${m}m' : '${m}m';
+        countdown = h > 0
+            ? Translations.t('period.info.countdown.hm')
+                .replaceAll('{h}', '$h')
+                .replaceAll('{m}', '$m')
+            : Translations.t('period.info.countdown.m')
+                .replaceAll('{m}', '$m');
       }
     }
 

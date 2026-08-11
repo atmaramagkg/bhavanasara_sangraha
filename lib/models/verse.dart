@@ -13,6 +13,7 @@ class Verse {
   final String? verseEnd;
   final String refDisplay;
   final String originalText;
+  final String originalTextDevanagari;
   final String translationText;
   final String commentaryText;
   final int sortOrder;
@@ -28,6 +29,7 @@ class Verse {
     this.verseEnd,
     required this.refDisplay,
     required this.originalText,
+    this.originalTextDevanagari = '',
     required this.translationText,
     required this.commentaryText,
     this.sortOrder = 0,
@@ -45,6 +47,8 @@ class Verse {
       verseEnd: map['verse_end'] as String?,
       refDisplay: (map['ref_display'] as String?) ?? '',
       originalText: (map['original_text'] as String?) ?? '',
+      originalTextDevanagari:
+          (map['original_text_devanagari'] as String?) ?? '',
       translationText: (map['translation_text'] as String?) ?? '',
       commentaryText: (map['commentary_text'] as String?) ?? '',
       sortOrder: (map['sort_order'] as num?)?.toInt() ?? 0,

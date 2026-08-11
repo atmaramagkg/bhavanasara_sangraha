@@ -63,7 +63,7 @@ class BookmarksScreen extends StatelessWidget {
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.close, size: 18),
-                      tooltip: 'Remove bookmark',
+                      tooltip: Translations.t('common.bookmark.remove'),
                       onPressed: () => AppSettings.toggleBookmark(item.section.id),
                     ),
                     onTap: () => Navigator.of(context).pop(item.section.id),

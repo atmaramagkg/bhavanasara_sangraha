@@ -520,7 +520,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.menu_book_outlined),
-              tooltip: 'Scriptures quoted',
+              tooltip: Translations.t('common.scriptures'),
               onPressed: _openBooksScreen,
               color: goldColor,
               disabledColor: goldColor.withAlpha(140),
@@ -539,7 +539,9 @@ class _ReadingScreenState extends State<ReadingScreen> {
               final bool isBookmarked = bookmarks.contains(_selectedSectionId);
               return IconButton(
                 icon: Icon(isBookmarked ? Icons.bookmark : Icons.bookmark_border),
-                tooltip: isBookmarked ? 'Remove bookmark' : 'Bookmark this section',
+                tooltip: isBookmarked
+                    ? Translations.t('common.bookmark.remove')
+                    : Translations.t('common.bookmark.add'),
                 onPressed: _selectedSectionId == -1
                     ? null
                     : () => AppSettings.toggleBookmark(_selectedSectionId),
@@ -567,7 +569,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
           const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.menu),
-            tooltip: 'Menu',
+            tooltip: Translations.t('common.menu'),
             onPressed: _openAppMenu,
             color: goldColor,
             disabledColor: goldColor.withAlpha(140),
