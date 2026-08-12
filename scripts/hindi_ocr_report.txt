@@ -1,0 +1,71 @@
+page outcomes: {'blank': 31, 'keep_tess': 618, 'remaining': 51}
+final scan over txt dir: clean=2438 broken=54
+
+period       printed  clean  no_pada1  pada1_no_danda
+nishanta         185    111         0              11
+pratah           466    372         0              18
+purvahna         388    323         0               4
+madhyahna       1317   1033         0              15
+aparahna         110    103         0               1
+sayahna           99     65         0               0
+pradosha         214    188         1               1
+nisha            268    243         0               3
+
+remaining (unrecoverable) verses: 57
+  PART1_107        num=251 reason=pada1_no_danda pada1='मा शंकिष्ठास्तदयति यथा दृक्पथं नास्य साध्व्या'
+  PART1_132        num=376 reason=pada1_no_danda pada1='मिष्टाभीष्ट सुपिष्ट कौोध-पुटिका पंकितस्तु तास'
+  PART1_137        num=403 reason=pada1_no_danda pada1='कृष्णः सतृष्णो नैवात्र बलः कवलमात्रभुक्\u200c,'
+  PART1_150        num=2 reason=pada1_no_danda pada1='(गोवि० ४८७२)'
+  PART1_16         num=6 reason=pada1_no_danda pada1='दृष्टौ हृष्टौ तदात्वोदित-रतिललितौ कक्खटीगीः स'
+  PART1_189        num=160 reason=pada1_no_danda pada1='इतस्ततः सञ्चरतीर्गवालीः, स्ववेणुनादैरथ संकलय्'
+  PART1_189        num=186 reason=pada1_no_danda pada1='राधासंगद्रुमारोहोत्कण्ठितालम्बनार्थिनी'
+  PART1_192        num=205 reason=pada1_no_danda pada1='ततः सखीनाह हरिः सह्या, यूयं क्षणं चारयताग्रतो'
+  PART1_20         num=24 reason=pada1_no_danda pada1='अन्याः का वृषभानुजामिह बिना धन्यामतीवादृताः,'
+  PART1_226        num=376 reason=pada1_no_danda pada1='(गोवि० ७८१०८)'
+  PART1_23         num=36 reason=pada1_no_danda pada1='(गोवि० १८३६)'
+  PART1_231        num=2 reason=pada1_no_danda pada1='दोलारण्यावुवंशी हति - रति मधुपानार्कपूजादि ली'
+  PART1_254        num=102 reason=no_pada1 pada1=''
+  PART1_264        num=150 reason=no_pada1 pada1=''
+  PART1_27         num=55 reason=pada1_no_danda pada1='लीलोल्लासित-कधरं मृदुकर्लर्वामांगुलि-च्छोटिका'
+  PART1_296        num=288 reason=pada1_no_danda pada1='सिक्तायां कृष्णलीलामृतरसनिचयैरुल्लसन्त्याममुष'
+  PART1_30         num=66 reason=pada1_no_danda pada1='भो भो विलासिन्नवधेहि यत्त्वया, विस्रस्तवेशाभर'
+  PART1_326        num=434 reason=pada1_no_danda pada1='निशम्य तासां परिहासभंगीं निशाम्य चासौ रति-लक्'
+  PART1_37         num=101 reason=pada1_no_danda pada1='क्वचन मुख-विषादः क्वापि हास-प्रसादः, क्व च दय'
+  PART1_43         num=131 reason=pada1_no_danda pada1='२६)'
+  PART1_43         num=133 reason=pada1_no_danda pada1='इत्थं यावदधावाम्बा तव नहि शयनादुत्थिता वावदीत'
+  PART1_44         num=136 reason=pada1_no_danda pada1='काचित्ताम्बूलपात्रं पात्रं मणिचितमपरा सारिकां'
+  PART1_45         num=146 reason=pada1_no_danda pada1='हसन्त्यस्ताः सख्यः करपिहित-मुख्यः प्रतिदिशं,'
+  PART1_46         num=146 reason=pada1_no_danda pada1='(गोवि० १८६१)'
+  PART1_54         num=184 reason=pada1_no_danda pada1='मुक्तारद्धाभवरुध्य वेणिमल सश्यन्दे क्षिपन्ती '
+  PART1_55         num=1 reason=pada1_no_danda pada1='इथं लापनतः स्वपुत्र वपुषि व्यग्रा स्पृशन्ती म'
+  PART1_55         num=2 reason=pada1_no_danda pada1='पुष्पादि - प्रतिवासितः सुकथयन्\u200c स्वप्नानुभूता'
+  PART1_65         num=50 reason=pada1_no_danda pada1='तत्\u200c किं ह्लादि किमार्नितिदं किमुभयं किंवा न '
+  PART1_66         num=53 reason=pada1_no_danda pada1='शौर्टीयब्धिरुरोजपज्जरतटै संवेशयन्त्या कथं'
+  PART1_66         num=54 reason=pada1_no_danda pada1='हास्यं मा कुरु मोहिते ! त्वमधुना न्यस्तास्य ह'
+  PART1_67         num=57 reason=pada1_no_danda pada1='दिव्यं वासयते द्युकूलमसकृत्ताम्बूलमप्ययाशये-'
+  PART1_67         num=58 reason=pada1_no_danda pada1='आधायैव शयीत मां हृदि मयैवावर्तयेत्\u200c पार्श्वक,'
+  PART1_68         num=60 reason=pada1_no_danda pada1='उद्वेगादनवस्थितं मम मनः कस्यापि मेघत्विषोः,'
+  PART1_70         num=67 reason=pada1_no_danda pada1='षीरोर्म्युच्छलितं मुदा हि विलसच्छय्याप्रसुप्त'
+  PART1_71         num=72 reason=pada1_no_danda pada1='गोविन्दस्य निष्ट -साशवनयनदनदा नवेन्दीवर-'
+  PART1_71         num=73 reason=pada1_no_danda pada1='सिञ्चन्त्यानन्दवाष्पैः स्नुतकुचपयसां धारया चा'
+  PART1_73         num=81 reason=pada1_no_danda pada1='आगत्य त्वरिता मुदाभिमिलिताः श्रीसीरिणा प्रांग'
+  PART1_84         num=135 reason=pada1_no_danda pada1='करतलादसकृच्चुलुकीकृतं, सलिलमारद-ताल्वनु चालित'
+  PART1_96         num=162 reason=pada1_no_danda pada1='मन्ये चारुनितम्ब शैलकटकान्मूरद्धाधिरोहार्थकं '
+  PART1_98         num=202 reason=no_pada1 pada1=''
+  PART2_103        num=1023 reason=pada1_no_danda pada1='नीलोत्पलस्योदयदिन्दूकान्ति-एुल्लैकपौरस्य दलोप'
+  PART2_113        num=1066 reason=pada1_no_danda pada1='इत्थं हरेस्तद्गुणवर्णनाम्बुधौ निमज्जनोन्मज्जन'
+  PART2_115        num=1072 reason=pada1_no_danda pada1='रोषमदारुण-दारुणदानव, मुक्तिदलोकन लोकनमस्कृत ग'
+  PART2_118        num=1076 reason=pada1_no_danda pada1='गोविन्द प्राण सर्वस्व-नखचन्द्रैकचन्द्रिका'
+  PART2_121        num=1086 reason=pada1_no_danda pada1='अस्या नितम्बस्तनयोर्दरिद्रयोः सन्धिं विधायाहत'
+  PART2_130        num=1128 reason=pada1_no_danda pada1='(गोवि० १११२७)'
+  PART2_156        num=1250 reason=pada1_no_danda pada1='यद्\u200c विषस्य विभवः परिसर्पी, सालिचिल्लिलतिकावर'
+  PART2_169        num=4 reason=pada1_no_danda pada1='(गोवि० १८ ८ ६८)'
+  PART2_18         num=626 reason=pada1_no_danda pada1='(कृ०° भा० ११८३४)'
+  PART2_197        num=5 reason=pada1_no_danda pada1='(कु० भा० १६.८४०)'
+  PART2_237        num=68 reason=pada1_no_danda pada1='चारुपाकिम-सुदाड़िमबीजा, दभ्रविभ्रम-समाहितपूजा'
+  PART2_26         num=662 reason=pada1_no_danda pada1='स्फरित-सहचरालीवेष्टितोऽम्लानकान्ति-स्तत कुसुम'
+  PART2_262        num=7 reason=no_pada1 pada1=''
+  PART2_286        num=66 reason=pada1_no_danda pada1='उर्वोविभ्रमिभिरुपर्ययुपर्ययुदीर्णे-गौरिम्णां '
+  PART2_298        num=146 reason=pada1_no_danda pada1='आ आ आ आति आ आ नटति च विपिनं मन्दवातेरितं आ'
+  PART2_331        num=8 reason=pada1_no_danda pada1='(ल० ६८४०)'
+  PART2_60         num=827 reason=pada1_no_danda pada1='बन्धमेत्य स तदन्तरवर्ती, भरूविभंग-वरनर्तकनत्त'

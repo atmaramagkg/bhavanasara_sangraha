@@ -1,0 +1,12 @@
+total clean verses recovered: 2358
+total broken (rule violated):  71
+
+period       printed  clean  no_pada1  pada1_no_danda
+nishanta         185    142         0              12
+pratah           466    342         0              22
+purvahna         388    297         0               6
+madhyahna       1317    993         0              20
+aparahna         110    102         0               1
+sayahna           99     65         0               0
+pradosha         214    179         1               2
+nisha            268    238         0               7
