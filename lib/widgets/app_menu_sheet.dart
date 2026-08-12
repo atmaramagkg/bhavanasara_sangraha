@@ -5,8 +5,9 @@ import '../core/database/app_database.dart';
 import '../services/app_settings.dart';
 import '../services/translations.dart';
 
-/// Content of the hamburger menu: language, theme, bookmarks, share.
-/// All labels come from the `translations` table of the active database.
+/// Content of the hamburger menu: language, theme, text size, bookmarks,
+/// share. All labels come from the `translations` table of the active
+/// database.
 class AppMenuSheet extends StatelessWidget {
   final VoidCallback onOpenBookmarks;
   final VoidCallback onShare;

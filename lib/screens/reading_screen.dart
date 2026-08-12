@@ -727,6 +727,13 @@ class _ReadingScreenState extends State<ReadingScreen> {
                               item.section.title,
                               style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textColor),
                             ),
+                            if (item.section.hindiHeading.isNotEmpty) ...[
+                              const SizedBox(height: 3),
+                              Text(
+                                item.section.hindiHeading,
+                                style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: goldColor),
+                              ),
+                            ],
                             const SizedBox(height: 8),
                             ...item.verses.map((verse) => Padding(
                               key: verse.quoteId == _highlightedQuoteId ? _highlightedQuoteKey : null,

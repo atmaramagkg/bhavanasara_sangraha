@@ -25,12 +25,14 @@ class LilaSectionItem {
   final int periodNodeId;
   final int sortOrder;
   final String title;
+  final String hindiHeading;
 
   const LilaSectionItem({
     required this.id,
     required this.periodNodeId,
     required this.sortOrder,
     required this.title,
+    this.hindiHeading = '',
   });
 }
 
@@ -203,6 +205,7 @@ class BssRepository {
         s.id,
         s.period_node_id,
         s.sort_order,
+        s.hindi_heading,
         COALESCE(
           (SELECT translated_text FROM translations WHERE translation_key = s.title_key AND language_id = ?),
           (SELECT translated_text FROM translations WHERE translation_key = s.title_key AND language_id = (SELECT id FROM languages WHERE code = 'en')),
@@ -221,6 +224,7 @@ class BssRepository {
         periodNodeId: (row['period_node_id'] as int?) ?? 0,
         sortOrder: (row['sort_order'] as int?) ?? 0,
         title: (row['title'] as String?) ?? '',
+        hindiHeading: (row['hindi_heading'] as String?) ?? '',
       );
     }).toList();
   }
@@ -281,8 +285,9 @@ class BssRepository {
         COALESCE(tsub.translated_text, tsub_en.translated_text, ps.code) AS sub_title,
 
         sec.id AS section_id, sec.period_node_id AS section_period_node_id,
-        sec.sort_order AS section_sort_order,
+        sec.sort_order AS section_sort_order, sec.hindi_heading AS section_hindi_heading,
         COALESCE(tsec.translated_text, tsec_en.translated_text, sec.title_key) AS section_title,
+        COALESCE(thead.translated_text, sec.hindi_heading) AS section_hindi_heading_display,
 
         q.id AS quote_id, COALESCE(q.quote_text, '') AS quote_text,
         COALESCE(c.ref_display, '') AS ref_display, c.source_verse_id AS verse_id,
@@ -311,6 +316,10 @@ class BssRepository {
        AND tsec_en.language_id = (SELECT id FROM languages WHERE code = 'en')
       LEFT JOIN translations tb
         ON tb.translation_key = b.title_key AND tb.language_id = ?
+      LEFT JOIN translations thead
+        ON thead.translation_key = 'section.' || ps.code || '.'
+           || sec.sort_order || '.hindi_title'
+       AND thead.language_id = ?
 
       WHERE pm.period_type = 'main'
       ORDER BY pm.sort_order ASC, ps.sort_order ASC, sec.sort_order ASC, q.sort_order ASC;
@@ -318,7 +327,7 @@ class BssRepository {
 
     final List<Map<String, dynamic>> rows = await db.rawQuery(
       query,
-      [langId, langId, langId, langId],
+      [langId, langId, langId, langId, langId],
     );
 
     final List<ContinuousReadingItem> items = [];
@@ -390,6 +399,7 @@ class BssRepository {
           periodNodeId: (row['section_period_node_id'] as int?) ?? 0,
           sortOrder: (row['section_sort_order'] as int?) ?? 0,
           title: (row['section_title'] as String?) ?? '',
+          hindiHeading: (row['section_hindi_heading_display'] as String?) ?? '',
         );
 
         currentVerses = [];

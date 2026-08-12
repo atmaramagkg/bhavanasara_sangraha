@@ -1,0 +1,600 @@
+[
+ {
+  "code": "nishanta",
+  "sections": [
+   {
+    "heading": "(intro)",
+    "page": "PART1_16.txt",
+    "verses": 26,
+    "attribs": 26,
+    "first_seq": 0,
+    "last_seq": 76,
+    "last_page": "PART1_21.txt"
+   },
+   {
+    "heading": "शुक-सारिका का प्रबोधन-प्रकार",
+    "page": "PART1_21.txt",
+    "verses": 55,
+    "attribs": 61,
+    "first_seq": 77,
+    "last_seq": 264,
+    "last_page": "PART1_36.txt"
+   },
+   {
+    "heading": "श्रीकृष्ण के प्रति शुकों की उक्ति",
+    "page": "PART1_36.txt",
+    "verses": 9,
+    "attribs": 10,
+    "first_seq": 265,
+    "last_seq": 294,
+    "last_page": "PART1_38.txt"
+   },
+   {
+    "heading": "लतारन्धों से सखियों का तात्कालिक शोभादर्शन और वर्णन",
+    "page": "PART1_38.txt",
+    "verses": 17,
+    "attribs": 18,
+    "first_seq": 295,
+    "last_seq": 351,
+    "last_page": "PART1_42.txt"
+   },
+   {
+    "heading": "श्रीकृष्णमुख से रसोद्गार और श्रीराधा का भावशावल्य",
+    "page": "PART1_42.txt",
+    "verses": 43,
+    "attribs": 49,
+    "first_seq": 352,
+    "last_seq": 498,
+    "last_page": "PART1_53.txt"
+   },
+   {
+    "heading": "श्रीराधा का आक्षेपादि और शयन",
+    "page": "PART1_53.txt",
+    "verses": 1,
+    "attribs": 1,
+    "first_seq": 499,
+    "last_seq": 509,
+    "last_page": "PART1_55.txt"
+   }
+  ]
+ },
+ {
+  "code": "pratah",
+  "sections": [
+   {
+    "heading": "(intro)",
+    "page": "PART1_55.txt",
+    "verses": 2,
+    "attribs": 1,
+    "first_seq": 510,
+    "last_seq": 515,
+    "last_page": "PART1_55.txt"
+   },
+   {
+    "heading": "मंजरी वर्ग का अपना प्रातःकृत्य एवं यावट का वर्णन :",
+    "page": "PART1_55.txt",
+    "verses": 6,
+    "attribs": 7,
+    "first_seq": 516,
+    "last_seq": 534,
+    "last_page": "PART1_57.txt"
+   },
+   {
+    "heading": "श्रीमती राधारानी की सेवा का आयोजन",
+    "page": "PART1_57.txt",
+    "verses": 13,
+    "attribs": 15,
+    "first_seq": 535,
+    "last_seq": 580,
+    "last_page": "PART1_60.txt"
+   },
+   {
+    "heading": "श्रीराधा का जगना एवं पीतवसन की चर्चा :-",
+    "page": "PART1_60.txt",
+    "verses": 25,
+    "attribs": 27,
+    "first_seq": 581,
+    "last_seq": 668,
+    "last_page": "PART1_69.txt"
+   },
+   {
+    "heading": "मधुरिका द्वारा श्रीकृष्ण के जागने एवं गोदोहन लीला का श्रवण",
+    "page": "PART1_69.txt",
+    "verses": 56,
+    "attribs": 57,
+    "first_seq": 669,
+    "last_seq": 842,
+    "last_page": "PART1_82.txt"
+   },
+   {
+    "heading": "श्रीराधारानी की तत्कालीन अवस्था एवं श्यामला का गृहगमन :",
+    "page": "PART1_82.txt",
+    "verses": 25,
+    "attribs": 25,
+    "first_seq": 843,
+    "last_seq": 921,
+    "last_page": "PART1_88.txt"
+   },
+   {
+    "heading": "श्रीराधिका का स्नान एवं वेषभूषा सम्पादन :-",
+    "page": "PART1_88.txt",
+    "verses": 42,
+    "attribs": 45,
+    "first_seq": 922,
+    "last_seq": 1054,
+    "last_page": "PART1_98.txt"
+   },
+   {
+    "heading": "श्रीकृष्ण की मल्लक्रीडा, स्नानादि का वर्णन-श्रवण :",
+    "page": "PART1_98.txt",
+    "verses": 8,
+    "attribs": 9,
+    "first_seq": 1056,
+    "last_seq": 1086,
+    "last_page": "PART1_100.txt"
+   },
+   {
+    "heading": "श्रीकृष्ण की वेषभूषा का वर्णन :-",
+    "page": "PART1_100.txt",
+    "verses": 39,
+    "attribs": 41,
+    "first_seq": 1087,
+    "last_seq": 1211,
+    "last_page": "PART1_109.txt"
+   },
+   {
+    "heading": "मार्ग में कन्दलता के साथ हास-परिहासादि वर्णन :",
+    "page": "PART1_109.txt",
+    "verses": 8,
+    "attribs": 9,
+    "first_seq": 1212,
+    "last_seq": 1239,
+    "last_page": "PART1_112.txt"
+   },
+   {
+    "heading": "तुंगविद्या के मुख से नन्दीश्वर का वर्णन :-",
+    "page": "PART1_112.txt",
+    "verses": 13,
+    "attribs": 14,
+    "first_seq": 1240,
+    "last_seq": 1285,
+    "last_page": "PART1_116.txt"
+   },
+   {
+    "heading": "तुंगविद्या के साथ श्रीराधा का परिहास :",
+    "page": "PART1_116.txt",
+    "verses": 4,
+    "attribs": 3,
+    "first_seq": 1286,
+    "last_seq": 1296,
+    "last_page": "PART1_117.txt"
+   },
+   {
+    "heading": "नन्दालय में व्रजेश्वरी के साथ श्रीराधा का मिलन प्रसंग :-",
+    "page": "PART1_117.txt",
+    "verses": 129,
+    "attribs": 146,
+    "first_seq": 1297,
+    "last_seq": 1722,
+    "last_page": "PART1_151.txt"
+   }
+  ]
+ },
+ {
+  "code": "purvahna",
+  "sections": [
+   {
+    "heading": "(intro)",
+    "page": "PART1_152.txt",
+    "verses": 21,
+    "attribs": 24,
+    "first_seq": 1723,
+    "last_seq": 1787,
+    "last_page": "PART1_156.txt"
+   },
+   {
+    "heading": "श्रीकृष्ण का वन गमन वर्णन :-",
+    "page": "PART1_156.txt",
+    "verses": 47,
+    "attribs": 52,
+    "first_seq": 1788,
+    "last_seq": 1941,
+    "last_page": "PART1_167.txt"
+   },
+   {
+    "heading": "श्रीकृष्ण की विदा याचना एवं बृजवासियों की विरह व्याकुलता :-",
+    "page": "PART1_167.txt",
+    "verses": 18,
+    "attribs": 19,
+    "first_seq": 1942,
+    "last_seq": 1996,
+    "last_page": "PART1_171.txt"
+   },
+   {
+    "heading": "श्रीराधारानी का यावट को लौटना और अभिसार का आयोजन :-",
+    "page": "PART1_171.txt",
+    "verses": 25,
+    "attribs": 28,
+    "first_seq": 1997,
+    "last_seq": 2088,
+    "last_page": "PART1_179.txt"
+   },
+   {
+    "heading": "श्रीवृन्दावन की शोभा वर्णन एवं श्रीकृष्ण की वन क्रीडा :-",
+    "page": "PART1_179.txt",
+    "verses": 42,
+    "attribs": 44,
+    "first_seq": 2089,
+    "last_seq": 2220,
+    "last_page": "PART1_189.txt"
+   },
+   {
+    "heading": "क्रीडा आदि वर्णन -",
+    "page": "PART1_189.txt",
+    "verses": 9,
+    "attribs": 10,
+    "first_seq": 2221,
+    "last_seq": 2255,
+    "last_page": "PART1_191.txt"
+   },
+   {
+    "heading": "भोजन लीला एवं वनदर्शन करते-२ कुसुम सरोवर पर आगमन :-",
+    "page": "PART1_191.txt",
+    "verses": 28,
+    "attribs": 32,
+    "first_seq": 2256,
+    "last_seq": 2348,
+    "last_page": "PART1_198.txt"
+   },
+   {
+    "heading": "भेजना :-",
+    "page": "PART1_198.txt",
+    "verses": 145,
+    "attribs": 153,
+    "first_seq": 2349,
+    "last_seq": 2778,
+    "last_page": "PART1_230.txt"
+   }
+  ]
+ },
+ {
+  "code": "madhyahna",
+  "sections": [
+   {
+    "heading": "(intro)",
+    "page": "PART1_231.txt",
+    "verses": 21,
+    "attribs": 25,
+    "first_seq": 2779,
+    "last_seq": 2880,
+    "last_page": "PART1_244.txt"
+   },
+   {
+    "heading": "धनिष्ठा के मुख से श्रीकृष्ण विषयक वर्णन एवं कथोपकथन :-",
+    "page": "PART1_244.txt",
+    "verses": 106,
+    "attribs": 116,
+    "first_seq": 2881,
+    "last_seq": 3219,
+    "last_page": "PART1_274.txt"
+   },
+   {
+    "heading": "पुष्प चयन, परस्पर हास परिहास कथोपकथन आदि :-",
+    "page": "PART1_274.txt",
+    "verses": 61,
+    "attribs": 70,
+    "first_seq": 3220,
+    "last_seq": 3420,
+    "last_page": "PART1_290.txt"
+   },
+   {
+    "heading": "परस्थर परिहास वचन :-",
+    "page": "PART1_290.txt",
+    "verses": 29,
+    "attribs": 34,
+    "first_seq": 3421,
+    "last_seq": 3517,
+    "last_page": "PART1_298.txt"
+   },
+   {
+    "heading": "श्रीललिता एवं श्रीकृष्ण का परिहास, मुरली हरण आदि -",
+    "page": "PART1_298.txt",
+    "verses": 107,
+    "attribs": 116,
+    "first_seq": 3518,
+    "last_seq": 3856,
+    "last_page": "PART1_323.txt"
+   },
+   {
+    "heading": "श्रीकृष्ण का कुञ्ज में प्रवेश और विविध विलास आदि :-",
+    "page": "PART1_323.txt",
+    "verses": 19,
+    "attribs": 23,
+    "first_seq": 3857,
+    "last_seq": 3919,
+    "last_page": "PART1_328.txt"
+   },
+   {
+    "heading": "श्रीराधा रूप वर्णन :-",
+    "page": "PART1_328.txt",
+    "verses": 5,
+    "attribs": 6,
+    "first_seq": 3920,
+    "last_seq": 3941,
+    "last_page": "PART1_330.txt"
+   },
+   {
+    "heading": "षड्ऋतुओं की सेवा का वर्णन :-",
+    "page": "PART1_330.txt",
+    "verses": 16,
+    "attribs": 18,
+    "first_seq": 3942,
+    "last_seq": 3990,
+    "last_page": "PART1_334.txt"
+   },
+   {
+    "heading": "श्रीवृन्दावन की शोभा वर्णन :-",
+    "page": "PART1_334.txt",
+    "verses": 1,
+    "attribs": 1,
+    "first_seq": 3991,
+    "last_seq": 4006,
+    "last_page": "PART1_337.txt"
+   },
+   {
+    "heading": "लताओं के द्वारा कृष्ण सेवा :-",
+    "page": "PART1_337.txt",
+    "verses": 99,
+    "attribs": 109,
+    "first_seq": 4007,
+    "last_seq": 4364,
+    "last_page": "PART2_26.txt"
+   },
+   {
+    "heading": "हेमन्त वन शोभा वर्णन :-",
+    "page": "PART2_26.txt",
+    "verses": 22,
+    "attribs": 25,
+    "first_seq": 4365,
+    "last_seq": 4440,
+    "last_page": "PART2_33.txt"
+   },
+   {
+    "heading": "श्रीराधारानी का प्रेम वैचित्र्य भाव :-",
+    "page": "PART2_33.txt",
+    "verses": 20,
+    "attribs": 26,
+    "first_seq": 4441,
+    "last_seq": 4520,
+    "last_page": "PART2_40.txt"
+   },
+   {
+    "heading": "ललितानन्ददकुंज में मधुपान लीला :-",
+    "page": "PART2_40.txt",
+    "verses": 34,
+    "attribs": 37,
+    "first_seq": 4521,
+    "last_seq": 4622,
+    "last_page": "PART2_49.txt"
+   },
+   {
+    "heading": "निकुज सरोज-कुंज में प्रवेश एवं शयनादि लीला विलास :-",
+    "page": "PART2_49.txt",
+    "verses": 153,
+    "attribs": 176,
+    "first_seq": 4623,
+    "last_seq": 5098,
+    "last_page": "PART2_89.txt"
+   },
+   {
+    "heading": "शुक सारिका का पाठ :-",
+    "page": "PART2_89.txt",
+    "verses": 81,
+    "attribs": 88,
+    "first_seq": 5099,
+    "last_seq": 5366,
+    "last_page": "PART2_118.txt"
+   },
+   {
+    "heading": "सखीगणों द्वारा श्रीराधा के अंग-प्रत्यंग का वर्णन :-",
+    "page": "PART2_118.txt",
+    "verses": 32,
+    "attribs": 43,
+    "first_seq": 5367,
+    "last_seq": 5486,
+    "last_page": "PART2_132.txt"
+   },
+   {
+    "heading": "वृन्देगितेन सारिका पुनराह :-",
+    "page": "PART2_132.txt",
+    "verses": 13,
+    "attribs": 15,
+    "first_seq": 5487,
+    "last_seq": 5532,
+    "last_page": "PART2_136.txt"
+   },
+   {
+    "heading": "सारिका द्वारा सखीगणों के स्वरुप का वर्णन :-",
+    "page": "PART2_136.txt",
+    "verses": 132,
+    "attribs": 143,
+    "first_seq": 5533,
+    "last_seq": 5944,
+    "last_page": "PART2_171.txt"
+   }
+  ]
+ },
+ {
+  "code": "aparahna",
+  "sections": [
+   {
+    "heading": "(intro)",
+    "page": "PART2_171.txt",
+    "verses": 36,
+    "attribs": 43,
+    "first_seq": 5945,
+    "last_seq": 6065,
+    "last_page": "PART2_181.txt"
+   },
+   {
+    "heading": "उत्कठिता श्रीमती राधारानी का श्रृंगार एवं सखीसह वार्तालाप :-",
+    "page": "PART2_181.txt",
+    "verses": 47,
+    "attribs": 55,
+    "first_seq": 6066,
+    "last_seq": 6230,
+    "last_page": "PART2_199.txt"
+   }
+  ]
+ },
+ {
+  "code": "sayahna",
+  "sections": [
+   {
+    "heading": "(intro)",
+    "page": "PART2_200.txt",
+    "verses": 61,
+    "attribs": 69,
+    "first_seq": 6231,
+    "last_seq": 6432,
+    "last_page": "PART2_216.txt"
+   }
+  ]
+ },
+ {
+  "code": "pradosha",
+  "sections": [
+   {
+    "heading": "(intro)",
+    "page": "PART2_217.txt",
+    "verses": 5,
+    "attribs": 3,
+    "first_seq": 6435,
+    "last_seq": 6445,
+    "last_page": "PART2_218.txt"
+   },
+   {
+    "heading": "श्रीइन्दुलेखा सखि द्वारा श्रीकृष्ण मिलन का समाचार आदि :-",
+    "page": "PART2_218.txt",
+    "verses": 25,
+    "attribs": 29,
+    "first_seq": 6446,
+    "last_seq": 6520,
+    "last_page": "PART2_224.txt"
+   },
+   {
+    "heading": "सुबल दारा राधारानी के विरह का वर्णन :-",
+    "page": "PART2_224.txt",
+    "verses": 40,
+    "attribs": 45,
+    "first_seq": 6521,
+    "last_seq": 6649,
+    "last_page": "PART2_233.txt"
+   },
+   {
+    "heading": "श्रीकृष्ण का वृन्दावन अभिसार :-",
+    "page": "PART2_233.txt",
+    "verses": 90,
+    "attribs": 100,
+    "first_seq": 6650,
+    "last_seq": 6943,
+    "last_page": "PART2_263.txt"
+   }
+  ]
+ },
+ {
+  "code": "nisha",
+  "sections": [
+   {
+    "heading": "(intro)",
+    "page": "PART2_263.txt",
+    "verses": 31,
+    "attribs": 33,
+    "first_seq": 6944,
+    "last_seq": 7049,
+    "last_page": "PART2_275.txt"
+   },
+   {
+    "heading": "वंशी वट में गमन यमुना पुलिन पर रासादि :-",
+    "page": "PART2_275.txt",
+    "verses": 4,
+    "attribs": 5,
+    "first_seq": 7050,
+    "last_seq": 7066,
+    "last_page": "PART2_277.txt"
+   },
+   {
+    "heading": "रासलीला :-",
+    "page": "PART2_277.txt",
+    "verses": 4,
+    "attribs": 5,
+    "first_seq": 7067,
+    "last_seq": 7137,
+    "last_page": "PART2_291.txt"
+   },
+   {
+    "heading": "अथान्यपुलिनान्तरे रासविलासीविशेषमाह :-",
+    "page": "PART2_292.txt",
+    "verses": 1,
+    "attribs": 1,
+    "first_seq": 7138,
+    "last_seq": 7140,
+    "last_page": "PART2_292.txt"
+   },
+   {
+    "heading": "रास के परिश्रम की शान्ति और पुनः हल्लीशक नृत्यादि :-",
+    "page": "PART2_292.txt",
+    "verses": 57,
+    "attribs": 65,
+    "first_seq": 7141,
+    "last_seq": 7339,
+    "last_page": "PART2_310.txt"
+   },
+   {
+    "heading": "युगल विलासादि :-",
+    "page": "PART2_310.txt",
+    "verses": 1,
+    "attribs": 2,
+    "first_seq": 7340,
+    "last_seq": 7348,
+    "last_page": "PART2_311.txt"
+   },
+   {
+    "heading": "विशेषविहारमुक्त्वाथ सामान्यमाह :-",
+    "page": "PART2_312.txt",
+    "verses": 6,
+    "attribs": 7,
+    "first_seq": 7349,
+    "last_seq": 7379,
+    "last_page": "PART2_316.txt"
+   },
+   {
+    "heading": "जल विहार -",
+    "page": "PART2_316.txt",
+    "verses": 5,
+    "attribs": 5,
+    "first_seq": 7380,
+    "last_seq": 7408,
+    "last_page": "PART2_321.txt"
+   },
+   {
+    "heading": "वेश रचना आदि भोजन एवं शयन लीला :-",
+    "page": "PART2_321.txt",
+    "verses": 15,
+    "attribs": 15,
+    "first_seq": 7409,
+    "last_seq": 7448,
+    "last_page": "PART2_324.txt"
+   },
+   {
+    "heading": "मंजरीगण की सेवा :-",
+    "page": "PART2_324.txt",
+    "verses": 33,
+    "attribs": 26,
+    "first_seq": 7449,
+    "last_seq": 7563,
+    "last_page": "PART2_350.txt"
+   }
+  ]
+ }
+]

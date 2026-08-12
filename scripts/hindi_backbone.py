@@ -281,6 +281,14 @@ for qid, vid in cur.execute("""
 for qid, vids in quote_verses.items():
     parts = [h for h in (verse_hindi(v) for v in vids) if h]
     if not parts:
+        en_bak = HI_DB + ".bak-en-quotes"
+        if os.path.exists(en_bak):
+            ec = sqlite3.connect(en_bak)
+            row = ec.execute("SELECT quote_text FROM quotes WHERE id=?", (qid,)).fetchone()
+            ec.close()
+            if row and row[0]:
+                cur.execute("UPDATE quotes SET quote_text=? WHERE id=?", (row[0], qid))
+                n_updated += 1
         continue
     new_text = " ".join(parts).strip()
     cur.execute("SELECT quote_text FROM quotes WHERE id=?", (qid,))
