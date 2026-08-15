@@ -50,66 +50,120 @@ TOC_VERSE_COUNTS = {"nishanta": 185, "pratah": 466, "purvahna": 388,
                     "madhyahna": 1317, "aparahna": 110, "sayahna": 99,
                     "pradosha": 214, "nisha": 268}
 
-# abbreviation key from the book's front matter (PART1_13) + OCR variants.
-# canonical OCR string -> book slug
+# canonical book layout (user-confirmed; PART1_13 prints the अष्ट्याम TOC)
+FRONT_MATTER_IMAGES = 14   # PART1_1..14 are title/preface/TOC; text starts at PART1_15
+PRINTED_PAGE_OFFSET = 14   # printed page N (1-based) == PART1 image (N+14)
+TITLE_PAGES = {            # (part, image_index) -> संग्रह number
+    ("PART1", 15): 1, ("PART1", 55): 2, ("PART1", 151): 3, ("PART1", 231): 4,
+    ("PART2", 171): 5, ("PART2", 199): 6, ("PART2", 217): 7, ("PART2", 263): 8,
+}
+CONCLUSION_START = ("PART2", 333)  # उपसंहारः begins here
+# printed page ranges per lila (from the book's अष्ट्याम लीला TOC)
+LILA_PAGE_RANGES = [
+    ("nishanta", 1, 40), ("pratah", 41, 136), ("purvahna", 137, 216),
+    ("madhyahna", 217, 506), ("aparahna", 507, 534), ("sayahna", 535, 552),
+    ("pradosha", 553, 568), ("nisha", 569, 668), ("upasamhara", 669, 673),
+]
+# लीला names in the book's own order (अष्ट्याम लीला), with time ranges (dandas)
+LILA_TIMES = [
+    ("nishanta", "03:36-06:00"), ("pratah", "06:00-08:24"),
+    ("purvahna", "08:24-10:48"), ("madhyahna", "10:48-15:36"),
+    ("aparahna", "15:36-18:24"), ("sayahna", "18:24-20:24"),
+    ("pradosha", "20:24-22:48"), ("nisha", "22:48-03:36"),
+]
+
+# abbreviation key from the book's front matter (PART1_13, सांकेतिक चिह्नानि),
+# canonical form -> slug; followed by OCR-discovered variants (garbled forms).
+# NOTE: EasyOCR often prints ॰ (U+0970); STRIP_RE removes it, so lookup keys
+# are the bare-letter forms (also present below).
 ABBR_MAP = {
-    "अ०": "alankara-kaustubha", "प०": "padyavali",
-    "आ०": "ananda-vrndavana-campu", "भर०": "bhakti-rasamrta-sindhu",
-    "उ०": "ujjvala-nilamani", "मा०": "bhagavatam",
-    "कर्णा०": "krsna-karnamrta", "कर्णा": "krsna-karnamrta",
-    "भाग०": "brhad-bhagavatamrta", "भाग": "brhad-bhagavatamrta",
-    "भा०": "bhagavatam", "भा": "bhagavatam", "भ०र": "bhakti-rasamrta-sindhu",
-    "कृभा०": "krsna-bhavanamrta", "कृभा": "krsna-bhavanamrta",
+    "अ०": "alankara-kaustubha",
+    "आ०": "ananda-vrndavana-campu",
+    "उ०": "ujjvala-nilamani",
+    "कर्णा०": "krsna-karnamrta",
+    "कृभा०": "krsna-bhavanamrta",
+    "कृष्णगणो०": "radha-krsna-ganoddesa-dipika",
+    "कृष्णा०": "krsnahnika-kaumudi",
+    "क्र०": "krama-dipika",
+    "गी०": "gita-govinda",
+    "गोपा०": "gopala-campu",
+    "गो वि०": "govinda-lilamrta",
+    "चन्द्र०": "caitanya-candramrta",
+    "चन्द्रो०": "caitanya-candrodaya",
+    "चिन्ता०": "dana-keli-cintamani",
+    "चै०": "caitanya-caritamrta-mahakavya",
+    "ज०": "jagannatha-vallabha-nataka",
+    "दा०": "dana-keli-kaumudi",
+    "प०": "padyavali",
+    "भ्र०": "bhakti-rasamrta-sindhu",
+    "भा०": "bhagavatam",
+    "भाग०": "brhad-bhagavatamrta",
+    "मधु०": "madhu-keli-valli",
+    "रति०": "govinda-rati-manjari",
+    "रा०": "radha-rasa-sudha-nidhi",
+    "ल०": "lalita-madhava",
+    "लह०": "stavamrta-lahari",
+    "वि०": "vidagdha-madhava",
+    "वृन्दा०": "vrndavana-mahimamrta",
+    "ब्रज०": "vraja-riti-cintamani",
+    "शेष०": "bhakti-rasamrta-sesa",
+    "सं०": "sangita-madhava",
+    "साच०": "sadhanamrta-candrika",
+    "स्त०": "stavamala",
+    "स्तवा०": "stavavali",
+    # ---- OCR variants ----
+    "आ": "ananda-vrndavana-campu", "अ": "alankara-kaustubha",
+    "उ": "ujjvala-nilamani", "कर्णा": "krsna-karnamrta",
+    "कृभा": "krsna-bhavanamrta", "कृभा०": "krsna-bhavanamrta",
     "कृ०भा": "krsna-bhavanamrta", "कु०भा": "krsna-bhavanamrta",
     "कू०भा": "krsna-bhavanamrta", "क०भा": "krsna-bhavanamrta",
-    "कृष्णाभा": "krsna-bhavanamrta", "कृ० भा": "krsna-bhavanamrta",
-    "कु० भा": "krsna-bhavanamrta", "कृभा०": "krsna-bhavanamrta",
-    "कृष्णगणो०": "radha-krsna-ganoddesa-dipika", "कृष्णगणो": "radha-krsna-ganoddesa-dipika",
-    "रति०": "govinda-rati-manjari", "रति": "govinda-rati-manjari",
-    "कृष्णा०": "krsnahnika-kaumudi", "कृष्णा": "krsnahnika-kaumudi",
-    "कष्णा": "krsnahnika-kaumudi", "कप्णा": "krsnahnika-kaumudi",
-    "किष्णा": "krsnahnika-kaumudi", "रष्णा": "krsnahnika-kaumudi",
-    "कृष्ण": "krsnahnika-kaumudi",
-    "रा०": "radha-rasa-sudha-nidhi", "रा": "radha-rasa-sudha-nidhi",
-    "क्र०": "krama-dipika", "ल०": "lalita-madhava", "ल": "lalita-madhava",
-    "गी०": "gita-govinda", "गी": "gita-govinda", "गीत": "gita-govinda",
-    "लह०": "stavamrta-lahari", "गोपा०": "gopala-campu",
-    "गोपा": "gopala-campu", "गोपि": "gopala-campu",
-    "वि०": "vidagdha-madhava", "वि": "vidagdha-madhava",
+    "कु० भा": "krsna-bhavanamrta", "कृ० भा": "krsna-bhavanamrta",
+    "कृष्णाभा": "krsna-bhavanamrta", "कृभ": "krsna-bhavanamrta",
+    "कृष्णगणो": "radha-krsna-ganoddesa-dipika",
+    "रति": "govinda-rati-manjari",
+    "कृष्णा": "krsnahnika-kaumudi", "कष्णा": "krsnahnika-kaumudi",
+    "कप्णा": "krsnahnika-kaumudi", "किष्णा": "krsnahnika-kaumudi",
+    "रष्णा": "krsnahnika-kaumudi", "कृष्ण": "krsnahnika-kaumudi",
+    "कुष्णा": "krsnahnika-kaumudi", "्ष्णा": "krsnahnika-kaumudi",
+    "पृष्णा": "krsnahnika-kaumudi",
+    "रा": "radha-rasa-sudha-nidhi",
+    "र०": "radha-rasa-sudha-nidhi", "र": "radha-rasa-sudha-nidhi",
+    "क्र": "krama-dipika", "ल": "lalita-madhava",
+    "गी": "gita-govinda", "गीत": "gita-govinda",
+    "लह": "stavamrta-lahari", "गोपा": "gopala-campu", "गोपि": "gopala-campu",
+    "कु०मा": "gopala-campu", "कृ०मा": "gopala-campu",
+    "वि": "vidagdha-madhava",
     "गोवि०": "govinda-lilamrta", "गोवि": "govinda-lilamrta",
     "गवि": "govinda-lilamrta", "गो०वि": "govinda-lilamrta",
     "गोदि": "govinda-lilamrta", "योवि": "govinda-lilamrta",
-    "वृन्दा०": "vrndavana-mahimamrta", "वृन्दा": "vrndavana-mahimamrta",
-    "ृन्दा": "vrndavana-mahimamrta",
-    "चन्द्रा": "caitanya-candramrta", "चन्द्रो": "caitanya-candrodaya",
-    "चन्द्रा०": "caitanya-candramrta",
-    "ब्रज०": "vraja-riti-cintamani", "ब्रज": "vraja-riti-cintamani",
-    "शेष०": "bhakti-rasamrta-sesa", "सं०": "sangita-madhava", "सं": "sangita-madhava",
+    "गावि": "govinda-lilamrta",
+    "वृन्दा": "vrndavana-mahimamrta", "ृन्दा": "vrndavana-mahimamrta",
+    "न्दा": "vrndavana-mahimamrta",
+    "चन्द्रा": "caitanya-candramrta", "चन्द्रा०": "caitanya-candramrta",
+    "चन्द्र": "caitanya-candramrta", "चन्द्रो": "caitanya-candrodaya",
+    "चिन्ता": "dana-keli-cintamani",
+    "ब्रज": "vraja-riti-cintamani", "सं": "sangita-madhava",
     "चै": "caitanya-caritamrta-mahakavya", "चे": "caitanya-caritamrta-mahakavya",
     "चि": "caitanya-caritamrta-mahakavya",
     "साच": "sadhanamrta-candrika", "सा०च": "sadhanamrta-candrika",
-    "ज०": "jagannatha-vallabha-nataka",
-    "स्त०": "stavamala", "दा०": "dana-keli-kaumudi", "दा": "dana-keli-kaumudi",
-    "स्तवा": "stavavali", "स्तवा०": "stavavali",
+    "ज": "jagannatha-vallabha-nataka", "दा": "dana-keli-kaumudi",
+    "प": "padyavali", "स्तवा": "stavavali",
+    "भर०": "bhakti-rasamrta-sindhu", "भ०र": "bhakti-rasamrta-sindhu",
+    "भ०र०": "bhakti-rasamrta-sindhu", "म०र०": "bhakti-rasamrta-sindhu",
+    "म०र": "bhakti-rasamrta-sindhu", "म": "bhakti-rasamrta-sindhu",
+    "भर": "bhakti-rasamrta-sindhu", "भ्र": "bhakti-rasamrta-sindhu",
+    "मा०": "bhagavatam", "भा": "bhagavatam", "भ": "bhagavatam",
+    "भाग": "brhad-bhagavatamrta", "मधु": "madhu-keli-valli",
+    "मधघु०": "madhu-keli-valli",
     "स्तवा०कुसुम": "stavavali-kusumanjali", "स्तवा०कसुम": "stavavali-kusumanjali",
     "रतवा०कुसुम": "stavavali-kusumanjali",
     "स्तवा०विलाप": "vilapa-kusumanjali",
     "स्त०कुज०भंग": "kunja-bhanga", "स्त०कुंजभंग०": "kunja-bhanga",
-    "कुंजभंग": "kunja-bhanga", "मधघु०": "madhu-keli-valli",
-    "भ०र०": "bhakti-rasamrta-sindhu", "म०र०": "bhakti-rasamrta-sindhu",
+    "स्त०कुंजभंग": "kunja-bhanga", "कुंजभंग": "kunja-bhanga",
+    "स्तकुंजभंग": "kunja-bhanga",
     "स्तं०स्वयं": "stavamala", "स्तं०स्व्यं": "stavamala",
     "स्तं०स्वयं०": "stavamala", "स्त०स्वयमुत": "stavamala",
-    # single-token forms (after trailing-० rstrip) discovered in OCR
-    "ज": "jagannatha-vallabha-nataka", "कु": "krsna-bhavanamrta",
-    "क्र": "krama-dipika", "सं": "sangita-madhava",
-    "म": "bhakti-rasamrta-sindhu", "म०र": "bhakti-rasamrta-sindhu",
-    "प": "padyavali", "कुष्णा": "krsnahnika-kaumudi",
-    "न्दा": "vrndavana-mahimamrta", "्ष्णा": "krsnahnika-kaumudi",
-    "गावि": "govinda-lilamrta", "लह": "stavamrta-lahari",
-    "स्तं": "stavamala", "कुभा": "krsna-bhavanamrta",
-    # garbled multi-word forms (gopala-campu chapter 16 verse runs)
-    "कु०मा": "gopala-campu", "कृ०मा": "gopala-campu",
-    "स्त०कुंजभंग": "kunja-bhanga",
+    "स्तं": "stavamala", "कु": "krsna-bhavanamrta", "कुभा": "krsna-bhavanamrta",
 }
 # abbrs handled with fuzzy prefix matching (map by first token)
 ABBR_PREFIX = [
@@ -118,12 +172,17 @@ ABBR_PREFIX = [
     ("कृष्णा", "krsnahnika-kaumudi"), ("कृभा", "krsna-bhavanamrta"),
     ("उ०", "ujjvala-nilamani"), ("भा०", "bhagavatam"),
     ("भाग", "brhad-bhagavatamrta"),
+    ("कृ", "krsna-bhavanamrta"),
 ]
 
 LILA_HEADER_RE = re.compile(
     r"^\s*(?:अथ\s+)?(?P<lila>[\u0900-\u097f:]{2,14})\s*लीला\s*[\(\[]\s*(?P<page>[०-९\d]{1,4})\s*[\)\]]")
 # fallback for garbled headers where "अथ X लीला" appears mid-line
 HEADER_FALLBACK = re.compile(r"अथ\s+(?P<lila>[\u0900-\u097f:]{2,14})\s*लीला")
+# PhotoOCR pages print the running header as just "निशान्त लीला" (no अथ, no (N)).
+# Require लीला not to run into another Devanagari word to avoid false matches
+# like "नक्तलीलापरिशिष्टे".
+HEADER_BARE = re.compile(r"^\s*(?:अथ\s+)?(?P<lila>[\u0900-\u097f:]{2,14})\s*लीला(?![\u0900-\u097f])")
 PAGE_ANYWHERE = re.compile(r"[\(\[]\s*([०-९\d]{1,4})\s*[\)\]]")
 PAREN_RE = re.compile(r"[\(\{\[][^\)\}\]]*[\)\}\]]")
 STRIP_RE = re.compile(r"[\s\.°॰^()|।'\`]")
@@ -203,7 +262,9 @@ def norm_devanagari(text):
 
 
 def iter_pages():
-    files = glob.glob(os.path.join(TXT_DIR, "*.txt"))
+    pattern = re.compile(r"^PART\d+_\d+\.txt$")
+    files = [p for p in glob.glob(os.path.join(TXT_DIR, "*.txt"))
+             if pattern.match(os.path.basename(p))]
     def keyf(p):
         m1 = re.search(r"PART(\d)", os.path.basename(p))
         m2 = re.search(r"_(\d+)\.txt", os.path.basename(p))
@@ -309,6 +370,23 @@ def classify(lila, page, line, prev_blank, next_blank, in_trans, pending_verse, 
     return seq, in_trans, cur_trans
 
 
+def _fold_dandas(s):
+    """Normalize double-danda renderings (॥  ||) to two single dandas ।। and
+    stray pipes to a danda, so ender/num regexes match PhotoOCR output too."""
+    return s.replace("॥", "।।").replace("||", "।।").replace("|", "।")
+
+
+def _verse_soon(lines, i, look=4):
+    """True if a verse-ender line (pada-2, ।।N।।) follows within `look` lines.
+    Distinguishes a real content-page running header from a table-of-contents
+    listing, which PhotoOCR prints as bare "X लीला" lines."""
+    for j in range(i + 1, min(len(lines), i + 1 + look)):
+        t = _fold_dandas(lines[j].strip())
+        if ENDNUM_RE.search(t):
+            return True
+    return False
+
+
 def parse_all():
     lilas = []          # list of dicts
     cur = None          # current lila dict
@@ -321,7 +399,7 @@ def parse_all():
     for fname, lines in iter_pages():
         n = len(lines)
         for i, raw in enumerate(lines):
-            line = raw.strip()
+            line = _fold_dandas(raw.strip())
             if not line:
                 continue
             prev_blank = (i == 0) or not lines[i - 1].strip()
@@ -332,6 +410,10 @@ def parse_all():
             m = LILA_HEADER_RE.match(line)
             if m is None and "लीला" in line:
                 m = HEADER_FALLBACK.search(line)
+                if m is None:
+                    m = HEADER_BARE.match(line)
+                    if m is not None and not _verse_soon(lines, i):
+                        m = None
             if m:
                 code = None
                 for c, aliases in LILA_ALIASES:
