@@ -1,0 +1,102 @@
+[
+ {
+  "code": "nishanta",
+  "name": "निशान्त लीला",
+  "order": 1,
+  "headings": 11,
+  "items": 185,
+  "items_no_num": 1,
+  "items_with_sanskrit": 69,
+  "markers_found": 40
+ },
+ {
+  "code": "pratah",
+  "name": "प्रातः लीला",
+  "order": 2,
+  "headings": 10,
+  "items": 444,
+  "items_no_num": 1,
+  "items_with_sanskrit": 185,
+  "markers_found": 96
+ },
+ {
+  "code": "purvahna",
+  "name": "पूर्वाह्न लीला",
+  "order": 3,
+  "headings": 3,
+  "items": 375,
+  "items_no_num": 1,
+  "items_with_sanskrit": 143,
+  "markers_found": 80
+ },
+ {
+  "code": "madhyahna",
+  "name": "मध्याह्न लीला",
+  "order": 4,
+  "headings": 17,
+  "items": 1217,
+  "items_no_num": 0,
+  "items_with_sanskrit": 543,
+  "markers_found": 287
+ },
+ {
+  "code": "aparahna",
+  "name": "अपराह्न लीला",
+  "order": 5,
+  "headings": 2,
+  "items": 103,
+  "items_no_num": 1,
+  "items_with_sanskrit": 53,
+  "markers_found": 27
+ },
+ {
+  "code": "sayahna",
+  "name": "सायाह्न लीला",
+  "order": 6,
+  "headings": 2,
+  "items": 74,
+  "items_no_num": 0,
+  "items_with_sanskrit": 34,
+  "markers_found": 18
+ },
+ {
+  "code": "pradosha",
+  "name": "प्रदोष लीला",
+  "order": 7,
+  "headings": 3,
+  "items": 182,
+  "items_no_num": 0,
+  "items_with_sanskrit": 71,
+  "markers_found": 46
+ },
+ {
+  "code": "nakta",
+  "name": "नक्त लीला",
+  "order": 8,
+  "headings": 4,
+  "items": 272,
+  "items_no_num": 0,
+  "items_with_sanskrit": 128,
+  "markers_found": 68
+ },
+ {
+  "code": "upasanghara",
+  "name": "उपसंहार",
+  "order": 9,
+  "headings": 0,
+  "items": 24,
+  "items_no_num": 1,
+  "items_with_sanskrit": 9,
+  "markers_found": 5
+ },
+ {
+  "code": "biographies",
+  "name": "जीवन चरित्र",
+  "order": 10,
+  "headings": 3,
+  "items": 0,
+  "items_no_num": 0,
+  "items_with_sanskrit": 0,
+  "markers_found": 0
+ }
+]

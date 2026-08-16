@@ -1,0 +1,72 @@
+{
+  "source": "C:\\Users\\austr\\bss\\scripts\\..\\bss_hindi_structured.json",
+  "per_main": [
+    {
+      "main": "nishanta",
+      "old_sections": 11,
+      "new_sections": 11,
+      "old_quotes": 185,
+      "new_quotes": 185
+    },
+    {
+      "main": "pratah",
+      "old_sections": 10,
+      "new_sections": 10,
+      "old_quotes": 444,
+      "new_quotes": 444
+    },
+    {
+      "main": "purvahna",
+      "old_sections": 4,
+      "new_sections": 4,
+      "old_quotes": 375,
+      "new_quotes": 375
+    },
+    {
+      "main": "madhyahna",
+      "old_sections": 17,
+      "new_sections": 17,
+      "old_quotes": 1217,
+      "new_quotes": 1217
+    },
+    {
+      "main": "aparahna",
+      "old_sections": 2,
+      "new_sections": 2,
+      "old_quotes": 103,
+      "new_quotes": 103
+    },
+    {
+      "main": "sayahna",
+      "old_sections": 2,
+      "new_sections": 2,
+      "old_quotes": 74,
+      "new_quotes": 74
+    },
+    {
+      "main": "pradosha",
+      "old_sections": 3,
+      "new_sections": 3,
+      "old_quotes": 182,
+      "new_quotes": 182
+    },
+    {
+      "main": "nisha",
+      "old_sections": 4,
+      "new_sections": 4,
+      "old_quotes": 272,
+      "new_quotes": 272
+    },
+    {
+      "main": "upasanghara",
+      "old_sections": 1,
+      "new_sections": 1,
+      "old_quotes": 24,
+      "new_quotes": 24
+    }
+  ],
+  "totals": {
+    "sections": 54,
+    "quotes": 2876
+  }
+}
