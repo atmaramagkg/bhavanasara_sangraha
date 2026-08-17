@@ -381,7 +381,7 @@ def _decode_ref_number(digits):
     if t.endswith("८"):
         t = t[:-1] + "@8@"
     if t.startswith("८८"):
-        t = "८/" + t[2:]
+        t = "@8@/" + t[2:]
     t = re.sub(r"८{2,}", lambda m: "/" + "८" * (len(m.group(0)) - 1), t)
     t = re.sub(r"८", "/", t)
     t = re.sub(r"[.,।,:/।\s?~!%&*]+", "/", t)

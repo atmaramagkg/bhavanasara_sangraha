@@ -3,38 +3,38 @@
   "per_main": [
     {
       "main": "nishanta",
-      "old_sections": 11,
-      "new_sections": 11,
+      "old_sections": 20,
+      "new_sections": 20,
       "old_quotes": 185,
       "new_quotes": 185
     },
     {
       "main": "pratah",
-      "old_sections": 10,
-      "new_sections": 10,
-      "old_quotes": 444,
-      "new_quotes": 444
+      "old_sections": 19,
+      "new_sections": 19,
+      "old_quotes": 445,
+      "new_quotes": 445
     },
     {
       "main": "purvahna",
-      "old_sections": 4,
-      "new_sections": 4,
+      "old_sections": 7,
+      "new_sections": 7,
       "old_quotes": 375,
       "new_quotes": 375
     },
     {
       "main": "madhyahna",
-      "old_sections": 17,
-      "new_sections": 17,
-      "old_quotes": 1217,
-      "new_quotes": 1217
+      "old_sections": 35,
+      "new_sections": 35,
+      "old_quotes": 1216,
+      "new_quotes": 1216
     },
     {
       "main": "aparahna",
       "old_sections": 2,
       "new_sections": 2,
-      "old_quotes": 103,
-      "new_quotes": 103
+      "old_quotes": 102,
+      "new_quotes": 102
     },
     {
       "main": "sayahna",
@@ -45,28 +45,76 @@
     },
     {
       "main": "pradosha",
-      "old_sections": 3,
-      "new_sections": 3,
-      "old_quotes": 182,
-      "new_quotes": 182
+      "old_sections": 5,
+      "new_sections": 5,
+      "old_quotes": 181,
+      "new_quotes": 181
     },
     {
       "main": "nisha",
-      "old_sections": 4,
-      "new_sections": 4,
+      "old_sections": 7,
+      "new_sections": 7,
       "old_quotes": 272,
       "new_quotes": 272
     },
     {
       "main": "upasanghara",
-      "old_sections": 1,
-      "new_sections": 1,
+      "old_sections": 2,
+      "new_sections": 2,
       "old_quotes": 24,
       "new_quotes": 24
     }
   ],
   "totals": {
-    "sections": 54,
-    "quotes": 2876
-  }
+    "sections": 99,
+    "quotes": 2874
+  },
+  "books_to_add": []
+}
+
+{
+  "verses": 2021,
+  "books_added": [],
+  "book_counts": {
+    "govinda-lilamrta": 1195,
+    "krsna-bhavanamrta": 389,
+    "krsnahnika-kaumudi": 320,
+    "ananda-vrndavana-campu": 217,
+    "ujjvala-nilamani": 40,
+    "bhagavatam": 36,
+    "gopala-campu": 36,
+    "alankara-kaustubha": 32,
+    "stavavali": 21,
+    "radha-rasa-sudha-nidhi": 15,
+    "brhad-bhagavatamrta": 12,
+    "caitanya-caritamrta-mahakavya": 12,
+    "lalita-madhava": 12,
+    "vidagdha-madhava": 12,
+    "sadhanamrta-candrika": 10,
+    "padyavali": 9,
+    "vrndavana-mahimamrta": 8,
+    "gita-govinda": 6,
+    "caitanya-candrodaya": 4,
+    "dana-keli-kaumudi": 4,
+    "sangita-madhava": 4,
+    "vraja-riti-cintamani": 4,
+    "govinda-rati-manjari": 3,
+    "jagannatha-vallabha-nataka": 3,
+    "stavamala": 3,
+    "caitanya-candramrta": 1,
+    "dana-keli-cintamani": 1,
+    "krsna-karnamrta": 1,
+    "madhu-kelivalli": 1,
+    "stavamrta-lahari": 1,
+    "bhakti-rasamrta-sesa": 0,
+    "bhakti-rasamrta-sindhu": 0,
+    "caitanya-carita": 0,
+    "caitanya-caritamrta": 0,
+    "govinda-virudavali": 0,
+    "krama-dipika": 0,
+    "kunja-bhanga": 0,
+    "radha-krsna-ganoddesa-dipika": 0,
+    "vilapa-kusumanjali": 0
+  },
+  "ref_missing": []
 }

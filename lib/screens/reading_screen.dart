@@ -290,7 +290,10 @@ class _ReadingScreenState extends State<ReadingScreen> {
   /// Renders a quote's text, highlighting the search match if this is the
   /// quote the user just navigated here from search to look at.
   Widget _buildQuoteText(VerseDetail verse, Color textColor, Color goldColor) {
-    final baseStyle = TextStyle(fontSize: 13, color: textColor);
+    final sanskritColor = Theme.of(context).brightness == Brightness.dark
+        ? BssColors.darkOakSanskritText
+        : BssColors.sanskritText;
+    final baseStyle = TextStyle(fontSize: 13, color: sanskritColor);
 
     if (_highlightedQuoteId == null ||
         verse.quoteId != _highlightedQuoteId ||
@@ -320,7 +323,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
             style: TextStyle(
               backgroundColor: goldColor.withAlpha(90),
               fontWeight: FontWeight.bold,
-              color: textColor,
+              color: sanskritColor,
             ),
           ),
           TextSpan(text: after),

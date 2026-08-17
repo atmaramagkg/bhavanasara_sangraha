@@ -175,6 +175,7 @@ class _VersePage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final goldColor = isDark ? BssColors.darkOakGold : BssColors.goldAccent;
     final subTextCol = isDark ? BssColors.darkOakSubText : BssColors.subText;
+    final sanskritColor = isDark ? BssColors.darkOakSanskritText : BssColors.sanskritText;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -191,7 +192,7 @@ class _VersePage extends StatelessWidget {
         if (verse.originalTextDevanagari.isNotEmpty) ...[
           Text(
             verse.originalTextDevanagari,
-            style: const TextStyle(fontSize: 18, height: 1.6),
+            style: TextStyle(fontSize: 18, height: 1.6, color: sanskritColor),
           ),
           const SizedBox(height: 8),
         ],
