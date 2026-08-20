@@ -21,7 +21,6 @@ class LilaSmaranaApp extends StatelessWidget {
               valueListenable: AppSettings.fontFamily,
               builder: (context, fontFamily, _) {
                 return MaterialApp(
-                  // Title comes from the database translations table.
                   title: Translations.t('app.title'),
                   debugShowCheckedModeBanner: false,
                   theme: BssTheme.parchmentTheme(fontFamily),
@@ -39,7 +38,7 @@ class LilaSmaranaApp extends StatelessWidget {
                     Locale('hi'),
                   ],
                   // Remount on language change so every screen re-reads its
-                  // content from the freshly opened database file.
+                  // translated content from the in-memory translation map.
                   home: HomeScreen(key: ValueKey(locale.languageCode)),
                 );
               },

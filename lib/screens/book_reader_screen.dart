@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../models/book.dart';
 import '../models/verse.dart';
+import '../services/app_settings.dart';
 import '../services/bss_repository.dart';
 import '../services/translations.dart';
 import 'verse_detail_screen.dart';
 
 /// A full-text reader for one source scripture: all of its verses from the
-/// `verses` table in chronological order. The verses table is gradually
-/// populated with full texts, so for now most rows only carry the quoted
-/// translation -- as full texts arrive they appear here automatically.
+/// unified `verses` table in order.
 class BookReaderScreen extends StatefulWidget {
   final BssRepository repository;
   final Book book;
@@ -40,6 +39,7 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
     final goldColor = isDark ? BssColors.darkOakGold : BssColors.goldAccent;
     final textColor = isDark ? BssColors.darkOakText : BssColors.darkText;
     final subTextCol = isDark ? BssColors.darkOakSubText : BssColors.subText;
+    final langCode = AppSettings.locale.value.languageCode;
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.book.title)),
@@ -70,60 +70,54 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
               itemCount: verses.length,
               separatorBuilder: (_, _) => Divider(height: 1, color: goldColor.withAlpha(60)),
               itemBuilder: (context, index) {
-              final v = verses[index];
-              return InkWell(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => VerseDetailScreen(
-                        repository: widget.repository,
-                        verseId: v.id,
+                final v = verses[index];
+                final translation = v.translationForCode(langCode);
+                return InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => VerseDetailScreen(
+                          repository: widget.repository,
+                          verseId: v.id,
+                        ),
                       ),
-                    ),
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              v.refDisplay,
-                              style: TextStyle(
-                                color: goldColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                v.refDisplay,
+                                style: TextStyle(
+                                  color: goldColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
-                          ),
-                          Icon(Icons.chevron_right, size: 16, color: goldColor.withAlpha(160)),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      if (v.translationText.isNotEmpty)
-                        Text(
-                          v.translationText,
-                          style: TextStyle(
-                            fontSize: 14,
-                            height: 1.4,
-                            color: textColor,
-                          ),
+                            Icon(Icons.chevron_right, size: 16, color: goldColor.withAlpha(160)),
+                          ],
                         ),
-                      if (v.commentaryText.isNotEmpty) ...[
                         const SizedBox(height: 6),
-                        Text(
-                          v.commentaryText,
-                          style: TextStyle(fontSize: 13, height: 1.4, color: subTextCol),
-                        ),
+                        if (translation.isNotEmpty)
+                          Text(
+                            translation,
+                            style: TextStyle(
+                              fontSize: 14,
+                              height: 1.4,
+                              color: textColor,
+                            ),
+                          ),
                       ],
-                    ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
             ),
           );
         },

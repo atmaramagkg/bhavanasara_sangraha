@@ -1,12 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show rootBundle, AssetManifest;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
-/// A language that ships with the app, discovered from a bundled database
-/// file (`assets/db/Bhavanasara-Sangraha_<code>.sqlite`).
+/// A language available in the app, read from the single unified database.
 class AvailableLanguage {
   final String code;
   final String name;
@@ -15,104 +14,32 @@ class AvailableLanguage {
 }
 
 /// Every user-visible word comes from the `translations` table
-/// inside the bundled database. Nothing is hardcoded here.
+/// inside the bundled unified database. Nothing is hardcoded here.
 class AppDatabase {
   AppDatabase._();
 
   static final AppDatabase instance = AppDatabase._();
 
-  /// Which language file is currently open. Each language ships as its own
-  /// self-contained database (content + translations in that language).
-  static String _languageCode = 'en';
-
-  /// Pre-built databases shipped inside the app assets.
-  static const String _enAssetPath =
-      'assets/db/Bhavanasara-Sangraha_En.sqlite';
-  static const String _ruAssetPath =
-      'assets/db/Bhavanasara-Sangraha_Ru.sqlite';
-  static const String _hiAssetPath =
-      'assets/db/Bhavanasara-Sangraha_Hi.sqlite';
-
-  static final RegExp _assetNamePattern =
-      RegExp(r'assets/db/Bhavanasara-Sangraha_(\w+)\.sqlite$');
-
-  static String get _assetPath {
-    switch (_languageCode) {
-      case 'ru':
-        return _ruAssetPath;
-      case 'hi':
-        return _hiAssetPath;
-      default:
-        return _enAssetPath;
-    }
-  }
-
-  static String get _dbFileName => 'bhavanasara_$_languageCode.db';
+  static const String _assetPath =
+      'assets/db/Bhavanasara-Sangraha.sqlite';
+  static const String _dbFileName = 'bhavanasara_unified.db';
 
   Database? _db;
 
-  /// Languages bundled with the app, discovered from the database files that
-  /// are actually present in the assets. The display name of each language is
-  /// read from its own file's `languages` table, so no language list is
-  /// hardcoded in code.
+  /// Languages available in the unified database.
   static Future<List<AvailableLanguage>> availableLanguages() async {
-    final AssetManifest manifest =
-        await AssetManifest.loadFromAssetBundle(rootBundle);
-    final List<AvailableLanguage> result = <AvailableLanguage>[];
-
-    for (final String asset in manifest.listAssets()) {
-      final Match? match = _assetNamePattern.firstMatch(asset);
-      if (match == null) continue;
-
-      final String code = match.group(1)!.toLowerCase();
-      final String name = await _languageNameFromAsset(asset, code);
-      result.add(AvailableLanguage(code: code, name: name));
-    }
-
-    result.sort((a, b) => a.code.compareTo(b.code));
-    return result;
-  }
-
-  /// Reads the `languages` table of a bundled database file to get the native
-  /// name of [code]. The file is probed through a throwaway writable copy so
-  /// sqlite can open it; the active databases are not affected.
-  static Future<String> _languageNameFromAsset(
-    String assetPath,
-    String code,
-  ) async {
-    try {
-      final ByteData data = await rootBundle.load(assetPath);
-      final Uint8List bytes =
-          data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-
-      final String probePath = join(
-        await getDatabasesPath(),
-        'lang_probe_$code.db',
-      );
-      final File probe = File(probePath);
-      if (!await probe.exists() ||
-          !listEquals(await probe.readAsBytes(), bytes)) {
-        await Directory(dirname(probePath)).create(recursive: true);
-        await probe.writeAsBytes(bytes, flush: true);
-      }
-
-      final Database probeDb = await openDatabase(probePath, readOnly: true);
-      try {
-        final List<Map<String, Object?>> rows = await probeDb.query(
-          'languages',
-          columns: ['name'],
-          where: 'code = ?',
-          whereArgs: [code],
-          limit: 1,
-        );
-        if (rows.isNotEmpty) return rows.first['name'] as String;
-      } finally {
-        await probeDb.close();
-      }
-    } catch (_) {
-      // Fall through: report the code itself if the file cannot be read.
-    }
-    return code;
+    final Database db = await instance.database;
+    final List<Map<String, Object?>> rows = await db.query(
+      'languages',
+      columns: ['code', 'name'],
+      orderBy: 'code ASC',
+    );
+    return rows
+        .map((r) => AvailableLanguage(
+              code: r['code'] as String,
+              name: r['name'] as String,
+            ))
+        .toList();
   }
 
   Future<Database> get database async {
@@ -121,15 +48,12 @@ class AppDatabase {
     return _db!;
   }
 
-  /// Copies the bundled database to a writable location, refreshing it
-  /// whenever the bundled asset changes (e.g. after a translation update).
+  /// Copies the bundled unified database to a writable location, refreshing
+  /// it whenever the bundled asset changes.
   Future<void> init() async {
     if (_db != null) return;
 
-    final String path = join(
-      await getDatabasesPath(),
-      _dbFileName,
-    );
+    final String path = join(await getDatabasesPath(), _dbFileName);
 
     final ByteData data = await rootBundle.load(_assetPath);
     final bytes =
@@ -145,52 +69,24 @@ class AppDatabase {
 
     _db = await openDatabase(path);
     await _db!.execute('PRAGMA foreign_keys = ON');
-    await _ensureLanguage(_languageCode);
   }
 
-  /// Switches the app to the database file for [code] ('en', 'ru' or 'hi').
-  /// Closes the current database, opens the matching one and makes sure its
-  /// `languages`/`app_settings` rows describe [code].
-  Future<void> switchDatabase(String code) async {
-    final String next = (code == 'ru' || code == 'hi') ? code : 'en';
-    if (next == _languageCode && _db != null) return;
-
-    await _db?.close();
-    _db = null;
-    _languageCode = next;
-    await init();
-  }
-
-  /// Ensures a `languages` row and the `selected_language_code` setting
-  /// exist for [code] so the COALESCE translation queries resolve correctly
-  /// no matter how the bundled file was produced.
-  Future<void> _ensureLanguage(String code) async {
-    final Database? db = _db;
-    if (db == null) return;
-
-    final List<Map<String, Object?>> existing = await db.query(
-      'languages',
-      columns: ['id'],
-      where: 'code = ?',
-      whereArgs: [code],
+  /// Returns the language code currently selected (from app_settings),
+  /// defaulting to 'en'.
+  Future<String> getCurrentLanguageCode() async {
+    final Database db = await database;
+    final List<Map<String, Object?>> rows = await db.rawQuery(
+      "SELECT setting_value FROM app_settings WHERE setting_key = 'selected_language_code'",
     );
-    if (existing.isEmpty) {
-      final List<Map<String, Object?>> maxId = await db.rawQuery(
-        'SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM languages',
-      );
-      final int nextId = maxId.first['next_id'] as int;
-      await db.insert('languages', {
-        'id': nextId,
-        'code': code,
-        'name': switch (code) {
-          'ru' => 'Русский',
-          'hi' => 'हिन्दी',
-          _ => 'English',
-        },
-        'is_default': 0,
-      });
+    if (rows.isNotEmpty) {
+      return rows.first['setting_value'] as String? ?? 'en';
     }
+    return 'en';
+  }
 
+  /// Persists the selected language code.
+  Future<void> setCurrentLanguageCode(String code) async {
+    final Database db = await database;
     await db.insert(
       'app_settings',
       {'setting_key': 'selected_language_code', 'setting_value': code},
@@ -199,79 +95,44 @@ class AppDatabase {
   }
 
   // ------------------------------------------------------------------
-  // Language helpers (words come from the DB, not from code)
+  // Translation helpers — new schema: translations table has en/ru/hi columns
   // ------------------------------------------------------------------
 
-  Future<int> getCurrentLanguageId() async {
-    final Database db = await database;
-
-    String code = 'en';
-
-    final List<Map<String, Object?>> setting = await db.rawQuery(
-      "SELECT setting_value FROM app_settings "
-      "WHERE setting_key = ?",
-      ['selected_language_code'],
-    );
-    if (setting.isNotEmpty) {
-      code = setting.first['setting_value'] as String? ?? 'en';
-    }
-
-    final List<Map<String, Object?>> lang = await db.rawQuery(
-      'SELECT id FROM languages WHERE code = ?',
-      [code],
-    );
-    if (lang.isNotEmpty) return lang.first['id'] as int;
-
-    return 1;
-  }
-
-  /// Translates a key: selected language -> English -> the key itself.
+  /// Translates a key using COALESCE: current language -> English -> the key itself.
   Future<String> translate(String key) async {
+    final String langCode = await getCurrentLanguageCode();
     final Database db = await database;
-    final int langId = await getCurrentLanguageId();
 
     final List<Map<String, Object?>> rows = await db.rawQuery(
       '''
       SELECT COALESCE(
-        (SELECT translated_text FROM translations
-          WHERE translation_key = ? AND language_id = ?),
-        (SELECT translated_text FROM translations
-          WHERE translation_key = ?
-            AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+        (SELECT $langCode FROM translations WHERE translation_key = ?),
+        (SELECT en FROM translations WHERE translation_key = ?),
         ?
       ) AS text
       ''',
-      [key, langId, key, key],
+      [key, key, key],
     );
 
     return rows.first['text'] as String? ?? key;
   }
 
   /// Loads every translation into a lookup map for the current language,
-  /// following the same fallback as [translate]: selected language ->
-  /// English -> the key itself. Keys not present in any language are skipped.
+  /// using the new column-based schema: COALESCE(current_lang, en, key).
   Future<Map<String, String>> loadTranslations() async {
+    final String langCode = await getCurrentLanguageCode();
     final Database db = await database;
-    final int langId = await getCurrentLanguageId();
-
-    final List<Map<String, Object?>> enRows = await db.rawQuery(
-      "SELECT id FROM languages WHERE code = 'en'",
-    );
-    final int enId = enRows.isNotEmpty ? enRows.first['id'] as int : 1;
 
     final List<Map<String, Object?>> rows = await db.rawQuery(
       '''
-      SELECT t.translation_key AS key,
+      SELECT translation_key AS key,
         COALESCE(
-          (SELECT translated_text FROM translations
-            WHERE translation_key = t.translation_key AND language_id = ?),
-          (SELECT translated_text FROM translations
-            WHERE translation_key = t.translation_key AND language_id = ?),
-          t.translation_key
+          $langCode,
+          en,
+          translation_key
         ) AS text
-      FROM (SELECT DISTINCT translation_key FROM translations) t
+      FROM translations
       ''',
-      [langId, enId],
     );
 
     return {
@@ -285,8 +146,8 @@ class AppDatabase {
   // ------------------------------------------------------------------
 
   Future<List<Map<String, dynamic>>> getMainPeriods() async {
+    final String langCode = await getCurrentLanguageCode();
     final Database db = await database;
-    final int langId = await getCurrentLanguageId();
 
     final List<Map<String, Object?>> rows = await db.rawQuery(
       '''
@@ -297,26 +158,22 @@ class AppDatabase {
         pn.time_end,
         pn.sort_order,
         COALESCE(
-          (SELECT translated_text FROM translations
-            WHERE translation_key = pn.name_key AND language_id = ?),
-          (SELECT translated_text FROM translations
-            WHERE translation_key = pn.name_key
-              AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          (SELECT $langCode FROM translations WHERE translation_key = pn.name_key),
+          (SELECT en FROM translations WHERE translation_key = pn.name_key),
           pn.code
         ) AS name
       FROM period_nodes pn
       WHERE pn.parent_id IS NULL
       ORDER BY pn.sort_order ASC
       ''',
-      [langId],
     );
 
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
   }
 
   Future<List<Map<String, dynamic>>> getSubPeriods(int parentId) async {
+    final String langCode = await getCurrentLanguageCode();
     final Database db = await database;
-    final int langId = await getCurrentLanguageId();
 
     final List<Map<String, Object?>> rows = await db.rawQuery(
       '''
@@ -327,26 +184,23 @@ class AppDatabase {
         pn.time_end,
         pn.sort_order,
         COALESCE(
-          (SELECT translated_text FROM translations
-            WHERE translation_key = pn.name_key AND language_id = ?),
-          (SELECT translated_text FROM translations
-            WHERE translation_key = pn.name_key
-              AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          (SELECT $langCode FROM translations WHERE translation_key = pn.name_key),
+          (SELECT en FROM translations WHERE translation_key = pn.name_key),
           pn.code
         ) AS name
       FROM period_nodes pn
       WHERE pn.parent_id = ?
       ORDER BY pn.sort_order ASC
       ''',
-      [langId, parentId],
+      [parentId],
     );
 
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
   }
 
   Future<List<Map<String, dynamic>>> getSections(int subPeriodId) async {
+    final String langCode = await getCurrentLanguageCode();
     final Database db = await database;
-    final int langId = await getCurrentLanguageId();
 
     final List<Map<String, Object?>> rows = await db.rawQuery(
       '''
@@ -354,26 +208,23 @@ class AppDatabase {
         s.id,
         s.sort_order,
         COALESCE(
-          (SELECT translated_text FROM translations
-            WHERE translation_key = s.title_key AND language_id = ?),
-          (SELECT translated_text FROM translations
-            WHERE translation_key = s.title_key
-              AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          (SELECT $langCode FROM translations WHERE translation_key = s.title_key),
+          (SELECT en FROM translations WHERE translation_key = s.title_key),
           s.title_key
         ) AS title
       FROM sections s
       WHERE s.period_node_id = ?
       ORDER BY s.sort_order ASC
       ''',
-      [langId, subPeriodId],
+      [subPeriodId],
     );
 
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();
   }
 
   Future<List<Map<String, dynamic>>> getBooks() async {
+    final String langCode = await getCurrentLanguageCode();
     final Database db = await database;
-    final int langId = await getCurrentLanguageId();
 
     final List<Map<String, Object?>> rows = await db.rawQuery(
       '''
@@ -381,25 +232,18 @@ class AppDatabase {
         b.id,
         b.slug,
         COALESCE(
-          (SELECT translated_text FROM translations
-            WHERE translation_key = b.title_key AND language_id = ?),
-          (SELECT translated_text FROM translations
-            WHERE translation_key = b.title_key
-              AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          (SELECT $langCode FROM translations WHERE translation_key = b.title_key),
+          (SELECT en FROM translations WHERE translation_key = b.title_key),
           b.slug
         ) AS title,
         COALESCE(
-          (SELECT translated_text FROM translations
-            WHERE translation_key = b.author_key AND language_id = ?),
-          (SELECT translated_text FROM translations
-            WHERE translation_key = b.author_key
-              AND language_id = (SELECT id FROM languages WHERE code = 'en')),
+          (SELECT $langCode FROM translations WHERE translation_key = b.author_key),
+          (SELECT en FROM translations WHERE translation_key = b.author_key),
           b.author_key
         ) AS author
       FROM books b
       ORDER BY b.id ASC
       ''',
-      [langId, langId],
     );
 
     return rows.map((row) => Map<String, dynamic>.from(row)).toList();

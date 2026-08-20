@@ -1,16 +1,17 @@
 // screens/search_screen.dart
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
+import '../services/app_settings.dart';
 import '../services/bss_repository.dart';
 import '../services/translations.dart';
 import '../utils/text_utils.dart';
 
 class SearchResult {
   final int sectionId;
-  final int? quoteId;
+  final int? verseId;
   final String query;
 
-  const SearchResult({required this.sectionId, this.quoteId, required this.query});
+  const SearchResult({required this.sectionId, this.verseId, required this.query});
 }
 
 class _SearchHit {
@@ -18,20 +19,19 @@ class _SearchHit {
   final VerseDetail? verse; // null when only the section title matched
   final int matchStart; // index into the *displayed* text, for highlighting
   final int matchLength;
-  final bool matchedInQuote;
+  final bool matchedInVerse;
 
   const _SearchHit({
     required this.item,
     required this.verse,
     required this.matchStart,
     required this.matchLength,
-    required this.matchedInQuote,
+    required this.matchedInVerse,
   });
 }
 
 /// Simple, fully in-memory, diacritic-insensitive search over everything
-/// already loaded for the reading feed. With ~800 quotes total this is
-/// instant on every keystroke -- no database changes, no indexing needed.
+/// already loaded for the reading feed.
 class SearchScreen extends StatefulWidget {
   final List<ContinuousReadingItem> feedItems;
   final String initialQuery;
@@ -56,7 +56,6 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     if (widget.initialQuery.trim().isNotEmpty) {
-      // Restore the previous search immediately when reopening the screen.
       _performSearch();
     }
   }
@@ -68,8 +67,6 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onTextChanged(String rawQuery) {
-    // Only reflect the typing state (e.g. show/hide the clear button);
-    // the actual search runs when the user presses the Search button.
     setState(() {
       _searched = false;
       _results = const [];
@@ -86,6 +83,7 @@ class _SearchScreenState extends State<SearchScreen> {
       return;
     }
 
+    final String langCode = AppSettings.locale.value.languageCode;
     final List<_SearchHit> quoteMatches = [];
     final List<_SearchHit> titleOnlyMatches = [];
 
@@ -95,8 +93,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
       bool anyVerseMatched = false;
       for (final verse in item.verses) {
-        final String normalizedQuote = normalizeForSearch(verse.quoteText);
-        final int idx = normalizedQuote.indexOf(query);
+        String translationText = verse.translationForCode(langCode);
+        if (translationText.isEmpty && verse.transliteration.isNotEmpty) {
+          translationText = verse.transliteration;
+        }
+        final String normalizedVerse = normalizeForSearch(translationText);
+        final int idx = normalizedVerse.indexOf(query);
         if (idx != -1) {
           anyVerseMatched = true;
           quoteMatches.add(_SearchHit(
@@ -104,21 +106,20 @@ class _SearchScreenState extends State<SearchScreen> {
             verse: verse,
             matchStart: idx,
             matchLength: query.length,
-            matchedInQuote: true,
+            matchedInVerse: true,
           ));
           continue;
         }
 
-        final String normalizedCitation =
-            normalizeForSearch('${verse.bookTitle} ${verse.refDisplay}');
-        if (normalizedCitation.contains(query)) {
+        final String normalizedRef = normalizeForSearch(verse.refDisplay);
+        if (normalizedRef.contains(query)) {
           anyVerseMatched = true;
           quoteMatches.add(_SearchHit(
             item: item,
             verse: verse,
             matchStart: 0,
             matchLength: 0,
-            matchedInQuote: false,
+            matchedInVerse: false,
           ));
         }
       }
@@ -129,7 +130,7 @@ class _SearchScreenState extends State<SearchScreen> {
           verse: null,
           matchStart: 0,
           matchLength: 0,
-          matchedInQuote: false,
+          matchedInVerse: false,
         ));
       }
     }
@@ -215,7 +216,7 @@ class _SearchScreenState extends State<SearchScreen> {
             onTap: () => Navigator.of(context).pop(
               SearchResult(
                 sectionId: hit.item.section.id,
-                quoteId: hit.verse?.quoteId,
+                verseId: hit.verse?.verseId,
                 query: _controller.text,
               ),
             ),
@@ -224,14 +225,12 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (hit.verse != null && hit.verse!.bookTitle.isNotEmpty)
+                  if (hit.verse != null && hit.verse!.refDisplay.isNotEmpty)
                     Text(
-                      [hit.verse!.bookTitle, hit.verse!.refDisplay]
-                          .where((s) => s.isNotEmpty)
-                          .join(' '),
+                      hit.verse!.refDisplay,
                       style: TextStyle(fontSize: 11, color: goldColor, fontStyle: FontStyle.italic),
                     ),
-                  if (hit.verse != null && hit.verse!.bookTitle.isNotEmpty)
+                  if (hit.verse != null && hit.verse!.refDisplay.isNotEmpty)
                     const SizedBox(height: 3),
                   Text(
                     hit.item.section.title,
@@ -256,13 +255,16 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    if (!hit.matchedInQuote) {
-      // Matched in the citation itself (book name / verse ref), which is
-      // already shown as its own line above -- so here just give context
-      // by showing the start of the quote, unhighlighted.
-      final String preview = hit.verse!.quoteText.length > 120
-          ? '${hit.verse!.quoteText.substring(0, 120)}…'
-          : hit.verse!.quoteText;
+    final String langCode = AppSettings.locale.value.languageCode;
+    String full = hit.verse!.translationForCode(langCode);
+    if (full.isEmpty && hit.verse!.transliteration.isNotEmpty) {
+      full = hit.verse!.transliteration;
+    }
+
+    if (!hit.matchedInVerse) {
+      final String preview = full.length > 120
+          ? '${full.substring(0, 120)}…'
+          : full;
       return Text(
         preview,
         maxLines: 2,
@@ -271,14 +273,6 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    final String full = hit.verse!.quoteText;
-    // Asymmetric window: short "before" context, generous "after" context.
-    // A long "before" window (e.g. matching earlier code's symmetric 70/70)
-    // can push the match itself toward the very edge of the 2-line limit,
-    // where it either gets clipped by the ellipsis or ends up barely
-    // visible on the last visible character. Keeping "before" short means
-    // the match reliably lands within the first line or the very start of
-    // the second, with plenty of room left to show it's a real match.
     const int beforeChars = 28;
     const int afterChars = 110;
     final int start = (hit.matchStart - beforeChars).clamp(0, full.length);

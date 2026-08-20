@@ -47,7 +47,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
   int _selectedMainPeriodId = 1;
   int _selectedSubPeriodId = -1;
   int _selectedSectionId = -1;
-  int? _highlightedQuoteId;
+  int? _highlightedVerseId;
   String? _highlightQuery;
   String _lastSearchQuery = '';
   final GlobalKey _highlightedQuoteKey = GlobalKey();
@@ -219,7 +219,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
       _currentSubPeriods = subPeriods;
       _selectedSubPeriodId = targetItem.subPeriod.id;
       _selectedSectionId = targetItem.section.id;
-      _highlightedQuoteId = null;
+      _highlightedVerseId = null;
       _highlightQuery = null;
     });
 
@@ -238,7 +238,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
       _selectedSubPeriodId = subPeriodId;
       _selectedMainPeriodId = targetItem.mainPeriod.id;
       _selectedSectionId = targetItem.section.id;
-      _highlightedQuoteId = null;
+      _highlightedVerseId = null;
       _highlightQuery = null;
     });
 
@@ -249,7 +249,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
   void _onSectionRailSelected(int sectionId) {
     setState(() {
       _selectedSectionId = sectionId;
-      _highlightedQuoteId = null;
+      _highlightedVerseId = null;
       _highlightQuery = null;
     });
     _scrollToSection(sectionId);
@@ -279,7 +279,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
       _currentSubPeriods = subPeriods;
       // Callers that want a highlight (search) set it themselves right
       // after this returns; every other caller (bookmarks) wants none.
-      _highlightedQuoteId = null;
+      _highlightedVerseId = null;
       _highlightQuery = null;
     });
 
@@ -287,31 +287,40 @@ class _ReadingScreenState extends State<ReadingScreen> {
     AppSettings.setLastReadSection(sectionId);
   }
 
-  /// Renders a quote's text, highlighting the search match if this is the
-  /// quote the user just navigated here from search to look at.
-  Widget _buildQuoteText(VerseDetail verse, Color textColor, Color goldColor) {
+  /// Renders a verse's translation text (or transliteration fallback),
+  /// highlighting the search match if this is the verse the user just
+  /// navigated here from search to look at.
+  Widget _buildVerseText(VerseDetail verse, Color textColor, Color goldColor) {
+    final langCode = AppSettings.locale.value.languageCode;
+    String text = verse.translationForCode(langCode);
+    // Fall back to transliteration when no translation in current language.
+    if (text.isEmpty && verse.transliteration.isNotEmpty) {
+      text = verse.transliteration;
+    }
+    if (text.isEmpty) return const SizedBox.shrink();
+
     final sanskritColor = Theme.of(context).brightness == Brightness.dark
         ? BssColors.darkOakSanskritText
         : BssColors.sanskritText;
     final baseStyle = TextStyle(fontSize: 13, color: sanskritColor);
 
-    if (_highlightedQuoteId == null ||
-        verse.quoteId != _highlightedQuoteId ||
+    if (_highlightedVerseId == null ||
+        verse.verseId != _highlightedVerseId ||
         _highlightQuery == null) {
-      return Text(verse.quoteText, style: baseStyle);
+      return Text(text, style: baseStyle);
     }
 
-    final String normalizedText = normalizeForSearch(verse.quoteText);
+    final String normalizedText = normalizeForSearch(text);
     final String normalizedQuery = normalizeForSearch(_highlightQuery!);
     final int matchIndex = normalizedQuery.isEmpty ? -1 : normalizedText.indexOf(normalizedQuery);
 
     if (matchIndex == -1) {
-      return Text(verse.quoteText, style: baseStyle);
+      return Text(text, style: baseStyle);
     }
 
-    final String before = verse.quoteText.substring(0, matchIndex);
-    final String matched = verse.quoteText.substring(matchIndex, matchIndex + normalizedQuery.length);
-    final String after = verse.quoteText.substring(matchIndex + normalizedQuery.length);
+    final String before = text.substring(0, matchIndex);
+    final String matched = text.substring(matchIndex, matchIndex + normalizedQuery.length);
+    final String after = text.substring(matchIndex + normalizedQuery.length);
 
     return RichText(
       text: TextSpan(
@@ -402,7 +411,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
     if (!mounted) return;
 
     setState(() {
-      _highlightedQuoteId = result.quoteId;
+      _highlightedVerseId = result.verseId;
       _highlightQuery = result.query.trim().isEmpty ? null : result.query;
     });
 
@@ -410,7 +419,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
     // section, so landing on the section's title isn't enough to
     // guarantee it's actually on screen. Once the highlight rebuild has
     // been laid out (next frame), nudge it into view specifically.
-    if (result.quoteId != null) {
+    if (result.verseId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollHighlightIntoView());
     }
   }
@@ -471,13 +480,15 @@ class _ReadingScreenState extends State<ReadingScreen> {
       ..writeln(item.section.title)
       ..writeln();
     for (final verse in item.verses) {
-      buffer.writeln(verse.quoteText);
-      // refDisplay already includes the book name + verse ref (e.g.
-      // "Kṛṣṇa-bhāvanāmṛtam 1.1-9"), so it's shown alone -- pairing it
-      // with bookTitle as well used to duplicate the book name.
-      final String citation = verse.refDisplay.isNotEmpty ? verse.refDisplay : verse.bookTitle;
-      if (citation.isNotEmpty) {
-        buffer.writeln('— $citation');
+      String text = verse.translationForCode(AppSettings.locale.value.languageCode);
+      if (text.isEmpty && verse.transliteration.isNotEmpty) {
+        text = verse.transliteration;
+      }
+      if (text.isNotEmpty) {
+        buffer.writeln(text);
+      }
+      if (verse.refDisplay.isNotEmpty) {
+        buffer.writeln('— ${verse.refDisplay}');
       }
       buffer.writeln();
     }
@@ -739,32 +750,32 @@ class _ReadingScreenState extends State<ReadingScreen> {
                             ],
                             const SizedBox(height: 8),
                             ...item.verses.map((verse) => Padding(
-                              key: verse.quoteId == _highlightedQuoteId ? _highlightedQuoteKey : null,
+                              key: verse.verseId == _highlightedVerseId ? _highlightedQuoteKey : null,
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  _buildQuoteText(verse, textColor, goldColor),
+                                  _buildVerseText(verse, textColor, goldColor),
                                   // refDisplay already includes the book name +
                                   // verse ref -- showing bookTitle alongside it
                                   // used to duplicate the book name. The ref is
                                   // a link into the verses table: tapping it
                                   // opens the full verse record.
-                                  if (verse.refDisplay.isNotEmpty || verse.bookTitle.isNotEmpty) ...[
+                                  if (verse.refDisplay.isNotEmpty) ...[
                                     const SizedBox(height: 3),
                                     Align(
                                       alignment: Alignment.centerRight,
                                       child: GestureDetector(
-                                        onTap: verse.verseId != null && verse.verseId! > 0
-                                            ? () => _openVerseDetail(verse.verseId!)
+                                        onTap: verse.verseId > 0
+                                            ? () => _openVerseDetail(verse.verseId)
                                             : null,
                                         child: Text(
-                                          verse.refDisplay.isNotEmpty ? verse.refDisplay : verse.bookTitle,
+                                          verse.refDisplay,
                                           style: TextStyle(
                                             fontSize: 11,
                                             fontStyle: FontStyle.italic,
                                             color: goldColor,
-                                            decoration: verse.verseId != null && verse.verseId! > 0
+                                            decoration: verse.verseId > 0
                                                 ? TextDecoration.underline
                                                 : TextDecoration.none,
                                             decorationColor: goldColor.withAlpha(140),

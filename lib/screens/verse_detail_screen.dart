@@ -1,16 +1,13 @@
 // screens/verse_detail_screen.dart
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
-import '../models/book.dart';
 import '../models/verse.dart';
+import '../services/app_settings.dart';
 import '../services/bss_repository.dart';
 import '../services/translations.dart';
 
-/// A single verse of a scripture in detail: reference, original, translation
-/// and commentary from the `verses` table. Reached from the reading pane's
-/// reference link and from the book reader. Supports paging through the
-/// book's verses in chronological order, either by swiping horizontally or
-/// with the prev/next buttons.
+/// A single verse in detail: transliteration, Sanskrit text, and translation
+/// in the current language. Supports paging through the book's verses.
 class VerseDetailScreen extends StatefulWidget {
   final BssRepository repository;
   final int verseId;
@@ -32,23 +29,13 @@ class _VerseDetailScreenState extends State<VerseDetailScreen> {
   int _initialIndex = 0;
   bool _needsInitialJump = true;
 
-  /// Fetched once the verse's book id is known, so the AppBar can show
-  /// which scripture this is -- refDisplay alone (e.g. "10.13.1") doesn't
-  /// say that on its own.
-  Book? _book;
-
-  /// Loads the requested verse to find its book, then the whole book in
-  /// chronological order so the user can page through it.
   Future<List<Verse>> _loadBook() async {
     final verse = await widget.repository.getVerseById(widget.verseId);
     if (verse == null) return const [];
-    final verses = await widget.repository.getVersesForBook(verse.bookId);
+    if (verse.bookId == null) return [verse];
+    final verses = await widget.repository.getVersesForBook(verse.bookId!);
     final idx = verses.indexWhere((v) => v.id == widget.verseId);
     _initialIndex = idx >= 0 ? idx : 0;
-    if (_book == null || _book!.id != verse.bookId) {
-      _book = await widget.repository.getBookById(verse.bookId);
-      if (mounted) setState(() {});
-    }
     return verses;
   }
 
@@ -74,7 +61,7 @@ class _VerseDetailScreenState extends State<VerseDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_book?.title ?? Translations.t('screen.verse.title')),
+        title: Text(Translations.t('screen.verse.title')),
       ),
       body: FutureBuilder<List<Verse>>(
         future: _bookFuture,
@@ -176,6 +163,8 @@ class _VersePage extends StatelessWidget {
     final goldColor = isDark ? BssColors.darkOakGold : BssColors.goldAccent;
     final subTextCol = isDark ? BssColors.darkOakSubText : BssColors.subText;
     final sanskritColor = isDark ? BssColors.darkOakSanskritText : BssColors.sanskritText;
+    final langCode = AppSettings.locale.value.languageCode;
+    final translation = verse.translationForCode(langCode);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -189,16 +178,16 @@ class _VersePage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        if (verse.originalTextDevanagari.isNotEmpty) ...[
+        if (verse.sanskritText.isNotEmpty) ...[
           Text(
-            verse.originalTextDevanagari,
+            verse.sanskritText,
             style: TextStyle(fontSize: 18, height: 1.6, color: sanskritColor),
           ),
           const SizedBox(height: 8),
         ],
-        if (verse.originalText.isNotEmpty) ...[
+        if (verse.transliteration.isNotEmpty) ...[
           Text(
-            verse.originalText,
+            verse.transliteration,
             style: TextStyle(
               fontSize: 15,
               height: 1.4,
@@ -208,17 +197,10 @@ class _VersePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
         ],
-        if (verse.translationText.isNotEmpty) ...[
+        if (translation.isNotEmpty) ...[
           Text(
-            verse.translationText,
+            translation,
             style: const TextStyle(fontSize: 16, height: 1.4),
-          ),
-          const SizedBox(height: 12),
-        ],
-        if (verse.commentaryText.isNotEmpty) ...[
-          Text(
-            verse.commentaryText,
-            style: TextStyle(fontSize: 14, height: 1.4, color: subTextCol),
           ),
         ],
       ],

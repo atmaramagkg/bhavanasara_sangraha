@@ -48,10 +48,11 @@ class Translations {
     _table = await AppDatabase.instance.loadTranslations();
   }
 
-  /// Switches the app language: opens the matching database file, reloads the
-  /// translations and only then notifies the UI via [AppSettings.locale].
+  /// Switches the app language: persists the code, reloads translations and
+  /// updates the locale via AppSettings. No longer needs to swap database files
+  /// because all languages live in the single unified database.
   static Future<void> setLanguage(String code) async {
-    await AppDatabase.instance.switchDatabase(code);
+    await AppDatabase.instance.setCurrentLanguageCode(code);
     await load();
     await AppSettings.setLocale(Locale(code));
   }
