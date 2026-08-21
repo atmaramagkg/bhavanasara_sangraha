@@ -43,6 +43,18 @@ class Translations {
     return count == 1 ? 'one' : 'other';
   }
 
+  /// Translates a normalized source_ref like 'govinda-lilamrta 1.107-108'
+  /// into the currently active UI language.
+  static String translateSourceRef(String ref) {
+    if (ref.isEmpty) return '';
+    final idx = ref.indexOf(' ');
+    if (idx < 0) return t('book.$ref.title');
+    final slug = ref.substring(0, idx);
+    final verseRef = ref.substring(idx + 1);
+    final bookName = t('book.$slug.title');
+    return '$bookName $verseRef';
+  }
+
   /// (Re)loads the map from the currently open database.
   static Future<void> load() async {
     _table = await AppDatabase.instance.loadTranslations();

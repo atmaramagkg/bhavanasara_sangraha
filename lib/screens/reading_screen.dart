@@ -8,6 +8,7 @@ import '../services/bss_repository.dart';
 import '../services/translations.dart';
 import '../widgets/app_menu_sheet.dart';
 import '../utils/text_utils.dart';
+import 'book_reader_screen.dart';
 import 'bookmarks_screen.dart';
 import 'books_screen.dart';
 import 'period_screen.dart';
@@ -51,6 +52,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
   String? _highlightQuery;
   String _lastSearchQuery = '';
   final GlobalKey _highlightedQuoteKey = GlobalKey();
+  final ScrollController _subPeriodScrollController = ScrollController();
   bool _isLoading = true;
   bool _isProgrammaticScroll = false;
 
@@ -65,6 +67,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
   @override
   void dispose() {
     _itemPositionsListener.itemPositions.removeListener(_onPositionsChanged);
+    _subPeriodScrollController.dispose();
     super.dispose();
   }
 
@@ -127,6 +130,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
       if (feedItems.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _itemScrollController.jumpTo(index: initialIndex);
+          _scrollSubPeriodBarToSelected();
         });
       }
     } catch (e) {
@@ -175,6 +179,26 @@ class _ReadingScreenState extends State<ReadingScreen> {
       }
     });
     AppSettings.setLastReadSection(secId);
+
+    _scrollSubPeriodBarToSelected();
+  }
+
+  void _scrollSubPeriodBarToSelected() {
+    if (!_subPeriodScrollController.hasClients) return;
+    final index = _currentSubPeriods.indexWhere(
+      (s) => s.id == _selectedSubPeriodId,
+    );
+    if (index == -1) return;
+    // Each sub-period chip is roughly 80px wide (padding + margin + text).
+    final targetOffset = (index * 80.0) - 80.0;
+    _subPeriodScrollController.animateTo(
+      targetOffset.clamp(
+        0.0,
+        _subPeriodScrollController.position.maxScrollExtent,
+      ),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+    );
   }
 
   /// Scrolls the feed so the given section's title lands near the top.
@@ -225,6 +249,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
 
     _scrollToSection(targetItem.section.id);
     AppSettings.setLastReadSection(targetItem.section.id);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollSubPeriodBarToSelected());
   }
 
   Future<void> _onSubPeriodSelected(int subPeriodId) async {
@@ -392,6 +417,36 @@ class _ReadingScreenState extends State<ReadingScreen> {
     );
   }
 
+  void _openBookBySlug(String slug) async {
+    final book = await widget.repository.getBookBySlug(slug);
+    if (book == null || !mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BookReaderScreen(
+          repository: widget.repository,
+          book: book,
+        ),
+      ),
+    );
+  }
+
+  void _openSourceRefVerse(String sourceRefs) async {
+    final parts = sourceRefs.split(' ');
+    if (parts.length < 2) return;
+    final slug = parts[0];
+    final verseRef = parts.sublist(1).join(' ');
+    final verseId = await widget.repository.getVerseIdByBookAndRef(slug, verseRef);
+    if (verseId == null || !mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => VerseDetailScreen(
+          repository: widget.repository,
+          verseId: verseId,
+        ),
+      ),
+    );
+  }
+
   void _openSearch() async {
     final SearchResult? result = await Navigator.of(context).push<SearchResult>(
       MaterialPageRoute(
@@ -487,8 +542,11 @@ class _ReadingScreenState extends State<ReadingScreen> {
       if (text.isNotEmpty) {
         buffer.writeln(text);
       }
-      if (verse.refDisplay.isNotEmpty) {
-        buffer.writeln('— ${verse.refDisplay}');
+      final shareRef = verse.bookId != null
+          ? verse.refDisplay
+          : Translations.translateSourceRef(verse.sourceRefs);
+      if (shareRef.isNotEmpty) {
+        buffer.writeln('— $shareRef');
       }
       buffer.writeln();
     }
@@ -654,6 +712,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                     SizedBox(
                       height: 34,
                       child: ListView.builder(
+                        controller: _subPeriodScrollController,
                         scrollDirection: Axis.horizontal,
                         itemCount: _currentSubPeriods.length,
                         padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -723,7 +782,7 @@ class _ReadingScreenState extends State<ReadingScreen> {
                             ],
                             if (item.isFirstInMainPeriod) ...[
                               Text(
-                                '${item.mainPeriod.id} ${item.mainPeriod.title}',
+                                '${_mainPeriods.indexWhere((p) => p.id == item.mainPeriod.id) + 1} ${item.mainPeriod.title}',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: goldColor),
                               ),
                               const SizedBox(height: 4),
@@ -749,33 +808,39 @@ class _ReadingScreenState extends State<ReadingScreen> {
                               ),
                             ],
                             const SizedBox(height: 8),
-                            ...item.verses.map((verse) => Padding(
+                            ...item.verses.map((verse) {
+                              final displayRef = verse.bookId != null
+                                  ? verse.refDisplay
+                                  : Translations.translateSourceRef(verse.sourceRefs);
+                              return Padding(
                               key: verse.verseId == _highlightedVerseId ? _highlightedQuoteKey : null,
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   _buildVerseText(verse, textColor, goldColor),
-                                  // refDisplay already includes the book name +
-                                  // verse ref -- showing bookTitle alongside it
-                                  // used to duplicate the book name. The ref is
-                                  // a link into the verses table: tapping it
-                                  // opens the full verse record.
-                                  if (verse.refDisplay.isNotEmpty) ...[
+                                  // Source verses show their book ref; BSS verses
+                                  // show source_refs (the scriptures they cite).
+                                  if (displayRef.isNotEmpty) ...[
                                     const SizedBox(height: 3),
                                     Align(
                                       alignment: Alignment.centerRight,
                                       child: GestureDetector(
-                                        onTap: verse.verseId > 0
-                                            ? () => _openVerseDetail(verse.verseId)
-                                            : null,
+                                        onTap: verse.bookId != null
+                                            ? (verse.verseId > 0
+                                                ? () => _openVerseDetail(verse.verseId)
+                                                : null)
+                                            : (verse.sourceRefs.isNotEmpty
+                                                ? () => _openSourceRefVerse(verse.sourceRefs)
+                                                : null),
                                         child: Text(
-                                          verse.refDisplay,
+                                          displayRef,
                                           style: TextStyle(
                                             fontSize: 11,
                                             fontStyle: FontStyle.italic,
                                             color: goldColor,
-                                            decoration: verse.verseId > 0
+                                            decoration: (verse.bookId != null && verse.verseId > 0) ||
+                                                    (verse.bookId == null && verse.sourceRefs.isNotEmpty)
                                                 ? TextDecoration.underline
                                                 : TextDecoration.none,
                                             decorationColor: goldColor.withAlpha(140),
@@ -786,7 +851,8 @@ class _ReadingScreenState extends State<ReadingScreen> {
                                   ],
                                 ],
                               ),
-                            )),
+                              );
+                            }),
                           ],
                         ),
                       );

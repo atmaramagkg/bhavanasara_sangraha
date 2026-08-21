@@ -166,11 +166,16 @@ class _VersePage extends StatelessWidget {
     final langCode = AppSettings.locale.value.languageCode;
     final translation = verse.translationForCode(langCode);
 
+    final displayRef = verse.bookId != null
+        ? verse.refDisplay
+        : Translations.translateSourceRef(verse.sourceRefs);
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          verse.refDisplay,
+        if (displayRef.isNotEmpty) ...[
+          Text(
+            displayRef,
           style: TextStyle(
             color: goldColor,
             fontWeight: FontWeight.bold,
@@ -178,6 +183,7 @@ class _VersePage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
+        ],
         if (verse.sanskritText.isNotEmpty) ...[
           Text(
             verse.sanskritText,

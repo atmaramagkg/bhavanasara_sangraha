@@ -11,6 +11,7 @@ class Verse {
   final String translationRu;
   final String translationHi;
   final int? bookId;
+  final String sourceRefs;
   final String sanskritText;
 
   const Verse({
@@ -18,6 +19,7 @@ class Verse {
     this.sectionId,
     this.sortOrder = 0,
     required this.refDisplay,
+    this.sourceRefs = '',
     this.transliteration = '',
     this.translationEn = '',
     this.translationRu = '',
@@ -53,6 +55,7 @@ class Verse {
       translationRu: (map['translation_ru'] as String?) ?? '',
       translationHi: (map['translation_hi'] as String?) ?? '',
       bookId: (map['book_id'] as num?)?.toInt(),
+      sourceRefs: (map['source_refs'] as String?) ?? '',
       sanskritText: (map['sanskrit_text'] as String?) ?? '',
     );
   }

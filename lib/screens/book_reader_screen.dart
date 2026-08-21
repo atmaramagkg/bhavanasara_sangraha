@@ -103,8 +103,8 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
                             Icon(Icons.chevron_right, size: 16, color: goldColor.withAlpha(160)),
                           ],
                         ),
-                        const SizedBox(height: 6),
-                        if (translation.isNotEmpty)
+                        if (translation.isNotEmpty) ...[
+                          const SizedBox(height: 4),
                           Text(
                             translation,
                             style: TextStyle(
@@ -113,6 +113,7 @@ class _BookReaderScreenState extends State<BookReaderScreen> {
                               color: textColor,
                             ),
                           ),
+                        ],
                       ],
                     ),
                   ),

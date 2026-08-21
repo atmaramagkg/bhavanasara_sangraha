@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import '../core/database/language_code.dart';
 import '../models/lila_period.dart';
 import '../models/book.dart';
 import '../models/verse.dart';
@@ -40,7 +41,9 @@ class LilaSectionItem {
 /// is a row from the `verses` table joined to its section.
 class VerseDetail {
   final int verseId;
+  final int? bookId;
   final String refDisplay;
+  final String sourceRefs;
   final String transliteration;
   final String translationEn;
   final String translationRu;
@@ -49,7 +52,9 @@ class VerseDetail {
 
   const VerseDetail({
     required this.verseId,
+    this.bookId,
     required this.refDisplay,
+    this.sourceRefs = '',
     this.transliteration = '',
     this.translationEn = '',
     this.translationRu = '',
@@ -58,18 +63,21 @@ class VerseDetail {
   });
 
   /// Returns the translation for the given language code.
-  /// No cross-language fallback for en/ru (shows nothing if unavailable).
-  /// Hindi falls back to English.
+  /// Hindi falls back to English; English/Russian fall back to the
+  /// transliteration, so a verse whose prose translation isn't in yet
+  /// still shows the romanized Sanskrit instead of going blank.
   String translationForCode(String code) {
     switch (code) {
       case 'hi':
         if (translationHi.isNotEmpty) return translationHi;
         if (translationEn.isNotEmpty) return translationEn;
-        return '';
+        return transliteration;
       case 'ru':
-        return translationRu;
+        if (translationRu.isNotEmpty) return translationRu;
+        return transliteration;
       default:
-        return translationEn;
+        if (translationEn.isNotEmpty) return translationEn;
+        return transliteration;
     }
   }
 }
@@ -148,11 +156,12 @@ class BssRepository {
           p.code
         ) AS title
       FROM period_nodes p
-      WHERE p.parent_id = $mainPeriodId AND p.period_type = 'sub'
+      WHERE p.parent_id = ? AND p.period_type = 'sub'
       ORDER BY p.sort_order ASC;
     ''';
 
-    final List<Map<String, dynamic>> results = await db.rawQuery(query);
+    final List<Map<String, dynamic>> results =
+        await db.rawQuery(query, [mainPeriodId]);
 
     return results.map<SubPeriod>((row) {
       final start = row['time_start'] as String? ?? '';
@@ -206,7 +215,7 @@ class BssRepository {
       "SELECT setting_value FROM app_settings WHERE setting_key = 'selected_language_code'",
     );
     if (settings.isNotEmpty) {
-      return settings.first['setting_value'] as String? ?? 'en';
+      return sanitizeLanguageCode(settings.first['setting_value'] as String?);
     }
     return 'en';
   }
@@ -225,11 +234,12 @@ class BssRepository {
           s.title_key
         ) AS title
       FROM sections s
-      WHERE s.period_node_id = $periodNodeId
+      WHERE s.period_node_id = ?
       ORDER BY s.sort_order ASC;
     ''';
 
-    final List<Map<String, dynamic>> results = await db.rawQuery(query);
+    final List<Map<String, dynamic>> results =
+        await db.rawQuery(query, [periodNodeId]);
 
     return results.map<LilaSectionItem>((row) {
       return LilaSectionItem(
@@ -246,7 +256,9 @@ class BssRepository {
     const query = '''
       SELECT 
         v.id AS verse_id,
+        v.book_id,
         v.ref_display,
+        v.source_refs,
         v.transliteration,
         v.translation_en,
         v.translation_ru,
@@ -262,7 +274,9 @@ class BssRepository {
     return results.map<VerseDetail>((row) {
       return VerseDetail(
         verseId: (row['verse_id'] as int?) ?? 0,
+        bookId: row['book_id'] as int?,
         refDisplay: (row['ref_display'] as String?) ?? '',
+        sourceRefs: (row['source_refs'] as String?) ?? '',
         transliteration: (row['transliteration'] as String?) ?? '',
         translationEn: (row['translation_en'] as String?) ?? '',
         translationRu: (row['translation_ru'] as String?) ?? '',
@@ -275,7 +289,22 @@ class BssRepository {
   /// Builds the entire continuous reading feed in a single JOIN query.
   /// New schema: period_nodes -> sections -> verses (no more quotes/citations).
   Future<List<ContinuousReadingItem>> loadFullContinuousFeed() async {
+    final List<Map<String, dynamic>> rows = await _queryContinuousFeedRows();
+    return _parseContinuousFeedRows(rows);
+  }
+
+  /// The shared JOIN behind [loadFullContinuousFeed] and [getSectionsByIds].
+  /// When [sectionIds] is given, the query is scoped to just those sections
+  /// via `WHERE sec.id IN (...)` instead of walking every section in the book.
+  Future<List<Map<String, dynamic>>> _queryContinuousFeedRows({
+    List<int>? sectionIds,
+  }) async {
     final String langCode = await _currentLanguageCode();
+
+    final String sectionFilter = (sectionIds != null && sectionIds.isNotEmpty)
+        ? 'AND sec.id IN (${List.filled(sectionIds.length, '?').join(', ')})'
+        : '';
+
     final query = '''
       SELECT
         pm.id AS main_id, pm.code AS main_code, pm.name_key AS main_name_key,
@@ -302,7 +331,7 @@ class BssRepository {
           sec.title_key
         ) AS section_title,
 
-        v.id AS verse_id, v.ref_display, v.transliteration,
+        v.id AS verse_id, v.book_id, v.ref_display, v.source_refs, v.transliteration,
         v.translation_en, v.translation_ru, v.translation_hi,
         v.sanskrit_text
 
@@ -310,12 +339,18 @@ class BssRepository {
       JOIN period_nodes ps ON ps.parent_id = pm.id AND ps.period_type = 'sub'
       JOIN sections sec ON sec.period_node_id = ps.id
       LEFT JOIN verses v ON v.section_id = sec.id
-      WHERE pm.period_type = 'main'
+      WHERE pm.period_type = 'main' $sectionFilter
       ORDER BY pm.sort_order ASC, ps.sort_order ASC, sec.sort_order ASC, v.sort_order ASC;
     ''';
 
-    final List<Map<String, dynamic>> rows = await db.rawQuery(query);
+    return db.rawQuery(query, sectionIds ?? const []);
+  }
 
+  /// Groups the flat JOIN rows from [_queryContinuousFeedRows] back into
+  /// one [ContinuousReadingItem] per section.
+  List<ContinuousReadingItem> _parseContinuousFeedRows(
+    List<Map<String, dynamic>> rows,
+  ) {
     final List<ContinuousReadingItem> items = [];
 
     int previousMainId = -1;
@@ -393,7 +428,9 @@ class BssRepository {
       if (verseId != null) {
         currentVerses.add(VerseDetail(
           verseId: verseId,
+          bookId: row['book_id'] as int?,
           refDisplay: (row['ref_display'] as String?) ?? '',
+          sourceRefs: (row['source_refs'] as String?) ?? '',
           transliteration: (row['transliteration'] as String?) ?? '',
           translationEn: (row['translation_en'] as String?) ?? '',
           translationRu: (row['translation_ru'] as String?) ?? '',
@@ -524,13 +561,45 @@ class BssRepository {
           ''
         ) AS author
       FROM books b
-      WHERE b.id = $bookId
+      WHERE b.id = ?
       LIMIT 1;
     ''';
 
-    final List<Map<String, dynamic>> results = await db.rawQuery(query);
+    final List<Map<String, dynamic>> results = await db.rawQuery(query, [bookId]);
     if (results.isEmpty) return null;
 
+    final row = results.first;
+    return Book(
+      id: (row['id'] as int?) ?? 0,
+      slug: (row['slug'] as String?) ?? '',
+      title: (row['title'] as String?) ?? '',
+      author: (row['author'] as String?) ?? '',
+      quoteCount: 0,
+    );
+  }
+
+  Future<Book?> getBookBySlug(String slug) async {
+    final String langCode = await _currentLanguageCode();
+    final query = '''
+      SELECT
+        b.id,
+        b.slug,
+        COALESCE(
+          (SELECT $langCode FROM translations WHERE translation_key = b.title_key),
+          (SELECT en FROM translations WHERE translation_key = b.title_key),
+          b.slug
+        ) AS title,
+        COALESCE(
+          (SELECT $langCode FROM translations WHERE translation_key = b.author_key),
+          (SELECT en FROM translations WHERE translation_key = b.author_key),
+          ''
+        ) AS author
+      FROM books b
+      WHERE b.slug = ?
+      LIMIT 1;
+    ''';
+    final List<Map<String, dynamic>> results = await db.rawQuery(query, [slug]);
+    if (results.isEmpty) return null;
     final row = results.first;
     return Book(
       id: (row['id'] as int?) ?? 0,
@@ -565,15 +634,38 @@ class BssRepository {
     return Verse.fromMap(rows.first);
   }
 
+  /// Finds a verse by book slug and verse ref (e.g. 'govinda-lilamrta' + '1.107').
+  /// Returns the verse ID or null if not found.
+  Future<int?> getVerseIdByBookAndRef(String slug, String verseRef) async {
+    final bookRows = await db.query('books', where: 'slug = ?', whereArgs: [slug], limit: 1);
+    if (bookRows.isEmpty) return null;
+    final bookId = bookRows.first['id'] as int;
+    final rows = await db.query(
+      'verses',
+      where: 'book_id = ? AND ref_display LIKE ?',
+      whereArgs: [bookId, '%$verseRef%'],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['id'] as int;
+  }
+
   /// Looks up sections by id (used by the bookmarks list).
+  /// Queries just the requested sections directly, rather than building the
+  /// full continuous feed (every period/section/verse) and discarding the
+  /// rest — the bookmarks list only ever needs a handful of sections out of
+  /// the whole book.
   Future<List<ContinuousReadingItem>> getSectionsByIds(
     List<int> sectionIds,
   ) async {
     if (sectionIds.isEmpty) return [];
 
-    final List<ContinuousReadingItem> allItems = await loadFullContinuousFeed();
+    final List<Map<String, dynamic>> rows =
+        await _queryContinuousFeedRows(sectionIds: sectionIds);
+    final List<ContinuousReadingItem> items = _parseContinuousFeedRows(rows);
+
     final Map<int, ContinuousReadingItem> bySectionId = {
-      for (final item in allItems) item.section.id: item,
+      for (final item in items) item.section.id: item,
     };
 
     return sectionIds
